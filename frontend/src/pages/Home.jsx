@@ -39,7 +39,7 @@ export default function Home() {
           setFilters(f => ({ ...f, tableId: cfg.tables[0].id }))
         }
       })
-      .catch(() => navigate('/settings'))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
