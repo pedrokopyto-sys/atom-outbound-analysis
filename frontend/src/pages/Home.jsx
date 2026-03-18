@@ -59,6 +59,11 @@ export default function Home() {
     return last?.data?.results || []
   }
 
+  const getClientConfig = () => ({
+    tableDoc:   localStorage.getItem('atom_table_doc')   || '',
+    basePrompt: localStorage.getItem('atom_base_prompt') || ''
+  })
+
   const handleSend = async (question) => {
     if (!question.trim() || loading || !filters.company) return
     setMessages(prev => [
@@ -71,7 +76,8 @@ export default function Home() {
       const result = await sendChat({
         question,
         filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit },
-        previousResult: getLastResult()
+        previousResult: getLastResult(),
+        ...getClientConfig()
       })
       setMessages(prev => [...prev.slice(0, -1), { type: 'assistant', data: result, question }])
     } catch (err) {
@@ -92,7 +98,8 @@ export default function Home() {
       const result = await sendChat({
         question,
         filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit },
-        previousResult: []
+        previousResult: [],
+        ...getClientConfig()
       })
       setMessages(prev => { const u = [...prev]; u[index] = { type: 'assistant', data: result, question }; return u })
     } catch (err) {

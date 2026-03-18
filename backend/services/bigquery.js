@@ -4,15 +4,21 @@ const { getConfig, setConfig } = require('./db');
 
 let bqClient;
 
-// In-memory cache (avoids even reading the file on repeated calls)
 const schemaCache = {};
 
 function getBQClient() {
   if (!bqClient) {
-    bqClient = new BigQuery({
-      keyFilename: path.join(__dirname, '../credentials/service_account.json'),
-      projectId: 'atom-ai-labs-ad1fa'
-    });
+    if (process.env.GCP_SERVICE_ACCOUNT) {
+      // Vercel: credentials from environment variable
+      const credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT);
+      bqClient = new BigQuery({ credentials, projectId: 'atom-ai-labs-ad1fa' });
+    } else {
+      // Local: credentials from file
+      bqClient = new BigQuery({
+        keyFilename: path.join(__dirname, '../credentials/service_account.json'),
+        projectId: 'atom-ai-labs-ad1fa'
+      });
+    }
   }
   return bqClient;
 }
@@ -49,22 +55,16 @@ async function runQuery(sql) {
   return serializeRows(rows);
 }
 
-// Returns schema as formatted string for Gemini prompts.
-// Priority: memory cache → persistent JSON file → BigQuery INFORMATION_SCHEMA
 async function getTableSchema(fullTableName) {
-  // 1. Memory cache (fastest — zero I/O)
   if (schemaCache[fullTableName]) return schemaCache[fullTableName];
 
-  // 2. Persistent file cache (survives server restarts)
   const cacheKey = `schema:${fullTableName}`;
   const persisted = getConfig(cacheKey);
   if (persisted) {
     schemaCache[fullTableName] = persisted;
-    console.log(`✅ Schema loaded from file cache for ${fullTableName}`);
     return persisted;
   }
 
-  // 3. Query BigQuery INFORMATION_SCHEMA (only runs once ever per table)
   const parts = fullTableName.replace(/`/g, '').split('.');
   if (parts.length !== 3) return '';
   const [project, dataset, table] = parts;
@@ -82,10 +82,8 @@ async function getTableSchema(fullTableName) {
     const schema = rows.map(r => `- ${r.column_name} (${r.data_type})`).join('\n');
     const formatted = `Columnas reales de la tabla \`${table}\`:\n${schema}`;
 
-    // Save to both caches
     schemaCache[fullTableName] = formatted;
     setConfig(cacheKey, formatted);
-    console.log(`✅ Schema fetched from BigQuery and cached for ${table}:\n${formatted}`);
     return formatted;
   } catch (err) {
     console.warn('Could not fetch schema:', err.message);
@@ -93,12 +91,10 @@ async function getTableSchema(fullTableName) {
   }
 }
 
-// Call this if the table structure changes and cache needs to be refreshed
 function clearSchemaCache(fullTableName) {
   const cacheKey = `schema:${fullTableName}`;
   delete schemaCache[fullTableName];
   setConfig(cacheKey, null);
-  console.log(`🗑 Schema cache cleared for ${fullTableName}`);
 }
 
 module.exports = { runQuery, validateSQL, getTableSchema, clearSchemaCache };

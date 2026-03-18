@@ -86,7 +86,9 @@ export default function Settings() {
   }, [testTableId])
 
   const handleSaveFromModal = async () => {
-    await saveConfig({ tableDoc, basePrompt })
+    localStorage.setItem('atom_table_doc',   tableDoc)
+    localStorage.setItem('atom_base_prompt', basePrompt)
+    await saveConfig({ tableDoc, basePrompt }).catch(() => {})
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
     setEditModal(null)
