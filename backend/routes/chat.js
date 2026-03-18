@@ -36,16 +36,14 @@ router.post('/', async (req, res) => {
 
     saveHistory({
       question, action, sql_query: sql, raw_results: results,
-      analisis:        analysis.analisis        || [],
-      recomendaciones: analysis.recomendaciones || [],
-      followups:       analysis.followups       || []
+      respuesta: analysis.respuesta || '',
+      followups: analysis.followups || []
     });
 
     res.json({
       action, sql, results,
-      analisis:        analysis.analisis        || [],
-      recomendaciones: analysis.recomendaciones || [],
-      followups:       analysis.followups       || []
+      respuesta: analysis.respuesta || '',
+      followups: analysis.followups || []
     });
   } catch (err) {
     console.error('Chat error:', err);

@@ -133,7 +133,7 @@ export default function Home() {
     setShowHistory(false)
     setMessages([
       { type: 'user', text: item.question },
-      { type: 'assistant', data: { analisis: item.analisis || '', recomendaciones: item.recomendaciones || '', followups: item.followups || [], results: item.raw_results || [], sql: item.sql_query, action: item.action }, question: item.question }
+      { type: 'assistant', data: { respuesta: item.respuesta || '', followups: item.followups || [], results: item.raw_results || [], sql: item.sql_query, action: item.action }, question: item.question }
     ])
   }
 

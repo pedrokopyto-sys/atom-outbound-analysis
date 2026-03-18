@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Download, RefreshCw, Copy, Check, Code2, ChevronRight, SearchCheck, Lightbulb, TableProperties, MessageCircleQuestion } from 'lucide-react'
+import { Download, RefreshCw, Copy, Check, Code2, ChevronRight, TableProperties, MessageCircleQuestion } from 'lucide-react'
 import Papa from 'papaparse'
 import DataTable from './DataTable'
 import SqlModal from './SqlModal'
 
 export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
-  const { analisis = '', recomendaciones = '', followups = [], results, sql, action } = data
+  const { respuesta = '', followups = [], results, sql, action } = data
   const [showSQL, setShowSQL] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showTable, setShowTable] = useState(false)
@@ -22,8 +22,7 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
   }
 
   const handleCopy = () => {
-    const text = [`Análisis\n${analisis}`, `\nRecomendaciones\n${recomendaciones}`].join('\n')
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(respuesta)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -33,26 +32,9 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
   return (
     <div className="fade-in bg-white rounded-2xl border border-gray-200 p-5 w-full shadow-sm space-y-5">
 
-      {/* ── 1+2. Análisis | Recomendaciones (2 columnas) ── */}
-      {(analisis || recomendaciones) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {analisis && (
-            <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
-              <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <SearchCheck size={12} /> Análisis
-              </p>
-              <p className="text-sm text-gray-700 leading-relaxed">{analisis}</p>
-            </div>
-          )}
-          {recomendaciones && (
-            <div className="bg-[#fdf7f0] rounded-xl p-4 border border-orange-100">
-              <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Lightbulb size={12} /> Recomendaciones
-              </p>
-              <p className="text-sm text-gray-700 leading-relaxed">{recomendaciones}</p>
-            </div>
-          )}
-        </div>
+      {/* ── 1. Respuesta ── */}
+      {respuesta && (
+        <p className="text-sm text-gray-800 leading-relaxed">{respuesta}</p>
       )}
 
       {/* ── 3. Follow-up buttons (izquierda) ── */}
