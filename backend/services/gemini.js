@@ -73,25 +73,21 @@ ${basePrompt || ''}
 
 Analizá los resultados de la consulta y respondé ÚNICAMENTE con un JSON válido, sin markdown, sin texto adicional:
 {
-  "analisis": [
-    "hallazgo concreto 1 basado en los datos",
-    "hallazgo concreto 2 basado en los datos"
-  ],
-  "recomendaciones": [
-    "acción concreta y accionable 1",
-    "acción concreta y accionable 2"
-  ],
+  "analisis": "texto corrido de máximo 2 oraciones con los hallazgos principales basados en los datos",
+  "recomendaciones": "texto corrido de máximo 2 oraciones con acciones concretas derivadas del análisis",
   "followups": [
-    "pregunta de profundización 1",
-    "pregunta de profundización 2"
+    "pregunta 1 que se puede responder consultando la tabla principal con otro filtro o agrupación",
+    "pregunta 2 que se puede responder consultando la tabla principal con otro filtro o agrupación"
   ]
 }
 
 REGLAS ESTRICTAS:
-- analisis: exactamente 3 items, no más. Cada uno expresa un hallazgo o patrón concreto encontrado en los datos. Sin párrafos, sin títulos.
-- recomendaciones: exactamente 3 items, no más. Cada uno es una acción concreta derivada del análisis. Sin párrafos.
-- followups: exactamente 2 preguntas, no más que un analista haría para profundizar. Deben ser ESPECÍFICAS al contexto de los datos encontrados (campañas, templates, fechas concretas). NUNCA sugerir comparar con otras empresas ni ver el total general — el análisis siempre es dentro de la empresa ya filtrada.
-- recomendaciones: ídem, nunca mencionar otras empresas. Siempre acciones dentro de la empresa analizada.
+- analisis: texto corrido, máximo 2 oraciones. Hallazgos concretos basados en los datos. Sin listas, sin bullets.
+- recomendaciones: texto corrido, máximo 2 oraciones. Acciones concretas y accionables. Sin listas, sin bullets.
+- followups: exactamente 2 preguntas. DEBEN ser preguntas que se puedan responder haciendo una query a la misma tabla BigQuery con los mismos filtros de empresa y fecha. Son preguntas sobre datos que aún no se vieron (no repitas lo que ya se analizó). NUNCA sugerir comparar con otras empresas.
+- PRIORIDAD DE ANÁLISIS: siempre analizá y mencioná en este orden cuando sea relevante: campaign_name → category → campaign_type → template_text. El rendimiento siempre se interpreta en el contexto de estas dimensiones.
+- RELEVANCIA POR VOLUMEN: ignorá campañas con volumen insignificante comparado al resto (ej: si hay campañas de 10.000 envíos y una de 3, ignorá la de 3). Si excluís alguna por volumen, podés mencionarlo brevemente en el análisis.
+- Nunca menciones otras empresas. El análisis es siempre dentro de la empresa ya filtrada.
 - Respondé SIEMPRE en el idioma de la pregunta del usuario.
 
 PREGUNTA ORIGINAL: ${question}
