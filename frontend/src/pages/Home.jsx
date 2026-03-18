@@ -21,8 +21,13 @@ const PHRASES = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const [config, setConfig] = useState(null)
-  const [filters, setFilters] = useState({ tableId: '', days: 7, company: '', limit: 100 })
+  const DEFAULT_CONFIG = {
+    tables: [{ id: 'outbound_analysis', label: 'Outbound Analysis', fullName: 'atom-ai-labs-ad1fa.conversational_ai_lab.outbound_analysis' }],
+    tableDoc: '',
+    basePrompt: ''
+  }
+  const [config, setConfig] = useState(DEFAULT_CONFIG)
+  const [filters, setFilters] = useState({ tableId: 'outbound_analysis', days: 7, company: '', limit: 100 })
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [phraseIdx, setPhraseIdx] = useState(0)
