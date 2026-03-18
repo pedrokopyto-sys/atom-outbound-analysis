@@ -55,14 +55,15 @@ export default function Settings() {
   const [editModal, setEditModal] = useState(null)
 
   const [testTableId, setTestTableId] = useState('')
-  const [testDays, setTestDays] = useState(7)
-  const [testCompany, setTestCompany] = useState('')
-  const [testLimit, setTestLimit] = useState(100)
+  const [testDays, setTestDays] = useState(parseInt(localStorage.getItem('atom_days') || '7'))
+  const [testCompany, setTestCompany] = useState(localStorage.getItem('atom_company') || '')
+  const [testLimit, setTestLimit] = useState(parseInt(localStorage.getItem('atom_limit') || '100'))
   const [testResult, setTestResult] = useState(null)
   const [testLoading, setTestLoading] = useState(false)
   const [companies, setCompanies] = useState([])
   const [loadingCo, setLoadingCo] = useState(false)
   const [schemaCleared, setSchemaCleared] = useState(false)
+  const [filtersSaved, setFiltersSaved] = useState(false)
 
   const selectCls = "w-full bg-orange-50 border border-orange-100 text-sm text-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-accent/50 cursor-pointer"
   const labelCls = "block text-xs font-bold text-accent mb-1.5"
@@ -92,6 +93,15 @@ export default function Settings() {
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
     setEditModal(null)
+  }
+
+  const handleSaveFilters = () => {
+    if (!testCompany) return
+    localStorage.setItem('atom_company', testCompany)
+    localStorage.setItem('atom_days',    String(testDays))
+    localStorage.setItem('atom_limit',   String(testLimit))
+    setFiltersSaved(true)
+    setTimeout(() => setFiltersSaved(false), 2500)
   }
 
   const handleTest = async () => {
@@ -175,10 +185,10 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ── RIGHT: Test connection ── */}
+        {/* ── RIGHT: Filters + Test connection ── */}
         <div className="overflow-y-auto p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-bold text-accent flex items-center gap-1.5"><Plug size={14} /> Probar conexión</h2>
+            <h2 className="text-sm font-bold text-accent flex items-center gap-1.5"><Plug size={14} /> Filtros y conexión</h2>
             <button
               onClick={async () => {
                 await clearSchemaCache(testTableId)
@@ -205,15 +215,15 @@ export default function Settings() {
                   {[7, 15, 30].map(d => <option key={d} value={d}>Últimos {d} días</option>)}
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>Empresa</label>
+              <div className="col-span-2">
+                <label className={labelCls}>Empresa <span className="text-red-400">*</span></label>
                 <select value={testCompany} onChange={e => setTestCompany(e.target.value)} className={selectCls} disabled={loadingCo}>
-                  <option value="">{loadingCo ? 'Cargando...' : 'Todas las empresas'}</option>
+                  <option value="">{loadingCo ? 'Cargando...' : '— Seleccioná una empresa —'}</option>
                   {companies.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>Límite</label>
+              <div className="col-span-2">
+                <label className={labelCls}>Límite de registros</label>
                 <select value={testLimit} onChange={e => setTestLimit(parseInt(e.target.value))} className={selectCls}>
                   {[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(l => (
                     <option key={l} value={l}>{l} registros</option>
@@ -223,13 +233,25 @@ export default function Settings() {
             </div>
 
             <button
-              onClick={handleTest}
-              disabled={testLoading}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-black text-white text-sm rounded-xl transition-colors disabled:opacity-50 font-semibold"
+              onClick={handleSaveFilters}
+              disabled={!testCompany}
+              className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-accent hover:bg-accent-dark text-white text-sm rounded-xl transition-colors disabled:opacity-40 font-semibold shadow-sm"
             >
-              <Play size={13} />
-              {testLoading ? 'Ejecutando...' : 'Correr Query'}
+              <Save size={13} />
+              {filtersSaved ? '¡Filtros guardados!' : 'Guardar filtros por defecto'}
             </button>
+
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-xs text-gray-400 mb-3 font-medium">Probar conexión con estos filtros</p>
+              <button
+                onClick={handleTest}
+                disabled={testLoading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-black text-white text-sm rounded-xl transition-colors disabled:opacity-50 font-semibold"
+              >
+                <Play size={13} />
+                {testLoading ? 'Ejecutando...' : 'Correr Query'}
+              </button>
+            </div>
 
             {testResult && (
               <div className="fade-in space-y-3">

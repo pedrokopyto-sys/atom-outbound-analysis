@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { HelpCircle, Trash2 } from 'lucide-react'
 import Header from '../components/Header'
-import FilterBar from '../components/FilterBar'
 import ChatInput from '../components/ChatInput'
 import SuggestedActions from '../components/SuggestedActions'
 import ResponseCard from '../components/ResponseCard'
@@ -27,7 +26,12 @@ export default function Home() {
     basePrompt: ''
   }
   const [config, setConfig] = useState(DEFAULT_CONFIG)
-  const [filters, setFilters] = useState({ tableId: 'outbound_analysis', days: 7, company: '', limit: 100 })
+  const [filters, setFilters] = useState({
+    tableId: 'outbound_analysis',
+    days:    parseInt(localStorage.getItem('atom_days')    || '7'),
+    company: localStorage.getItem('atom_company') || '',
+    limit:   parseInt(localStorage.getItem('atom_limit')   || '100')
+  })
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [phraseIdx, setPhraseIdx] = useState(0)
@@ -140,8 +144,23 @@ export default function Home() {
       <Header onHistoryClick={handleShowHistory} />
 
       <div className="h-14 shrink-0" />
-      {config && <FilterBar filters={filters} onChange={setFilters} tables={config.tables || []} />}
-      <div className="h-[60px] shrink-0" />
+
+      {/* Active filters bar */}
+      {filters.company ? (
+        <div className="px-6 py-2 border-b border-orange-100 bg-white/60 flex items-center gap-3 text-xs text-gray-500">
+          <span className="font-bold text-accent">{filters.company}</span>
+          <span>·</span>
+          <span>Últimos {filters.days} días</span>
+          <span>·</span>
+          <span>{filters.limit} registros</span>
+          <a href="/settings" className="ml-auto text-gray-400 hover:text-accent transition-colors">Cambiar</a>
+        </div>
+      ) : (
+        <div className="px-6 py-2 border-b border-orange-100 bg-orange-50 flex items-center gap-2 text-xs text-orange-600">
+          <span>⚠ No hay empresa configurada.</span>
+          <a href="/settings" className="font-semibold underline hover:text-accent">Ir a Configuración</a>
+        </div>
+      )}
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
