@@ -15,10 +15,11 @@ Permite hacer preguntas en lenguaje natural sobre datos de campañas outbound de
 | Backend | Node.js + Express |
 | IA | Google Gemini API (`gemini-2.0-flash`) |
 | Base de datos | Google BigQuery |
-| Persistencia local | JSON (`backend/data/`) |
+| Persistencia local | JSON (`backend/data/`) — solo en desarrollo local |
 | Autenticación GCP | Service Account (JSON) |
 | Gráficos | Recharts |
 | Exportación | PapaParse |
+| Deploy | Vercel (frontend + serverless functions) |
 
 ## Arquitectura
 
@@ -26,14 +27,14 @@ Permite hacer preguntas en lenguaje natural sobre datos de campañas outbound de
 Usuario (browser)
   │
   ▼
-React Frontend (http://localhost:5173)
+React Frontend (http://localhost:5173 / Vercel)
   │   /         → panel conversacional
   │   /settings → configuración
   ▼
-Node.js + Express (http://localhost:3001)
+Node.js + Express (http://localhost:3001 / Vercel Functions /api/server)
   ├── Gemini API   → generateSQL + summarizeResults
   ├── BigQuery     → ejecución de queries + schema detection
-  └── JSON files  → config.json + history.json
+  └── JSON files  → config.json + history.json (solo local; Vercel usa memoria)
 ```
 
 ## Flujo de una consulta
@@ -49,6 +50,17 @@ Node.js + Express (http://localhost:3001)
    - **Follow-ups** — 2 preguntas de profundización específicas al contexto
 6. Respuesta guardada en historial
 
+## Deploy en Vercel
+
+Variables de entorno requeridas en Vercel:
+
+| Key | Descripción |
+|---|---|
+| `GEMINI_API_KEY` | API key de Google Gemini |
+| `GCP_SERVICE_ACCOUNT` | Contenido completo del `service_account.json` en una línea |
+
+> **Nota**: El historial de conversaciones no persiste entre requests en Vercel (filesystem efímero). La config de tableDoc y basePrompt se guarda en `localStorage` del browser.
+
 ## Estructura del Proyecto
 
 ```
@@ -56,6 +68,10 @@ outbound_chat_analysis/
 ├── README.md
 ├── CHANGELOG.md
 ├── CREDENTIALS.md
+├── package.json                          # deps para Vercel Functions
+├── vercel.json                           # config de deploy
+├── api/
+│   └── server.js                         # entry point Vercel (wraps Express)
 ├── backend/
 │   ├── index.js
 │   ├── .env                          # GEMINI_API_KEY, PORT
@@ -154,4 +170,5 @@ PORT=3001
 - Service account JSON nunca se expone al frontend
 - Solo se permiten queries `SELECT` (se bloquean INSERT, UPDATE, DELETE, DROP, etc.)
 - Rango máximo de datos: **30 días hacia atrás**
-- App de **un solo usuario**, uso local únicamente
+- App de **un solo usuario**
+- Deploy en Vercel: credenciales via variables de entorno, nunca en el repo

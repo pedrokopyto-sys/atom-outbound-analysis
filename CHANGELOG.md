@@ -11,8 +11,16 @@
 - Repo privado creado en GitHub: `pedrokopyto-sys/atom-outbound-analysis`
 - `.gitignore` configurado: excluye `node_modules/`, `backend/.env`, `backend/credentials/`, `backend/data/`, `frontend/dist/`
 - Primer commit y push a GitHub
-- Plan de deploy: Firebase Hosting (frontend) + Firebase Cloud Functions (backend)
-- Firebase project: `atom-ai-labs-ad1fa`
+- **Deploy en Vercel** (frontend + serverless functions):
+  - `api/server.js` como entry point que exporta el Express app
+  - `vercel.json` con buildCommand + rewrites `/api/:path*` → `/api/server`
+  - `package.json` raíz con dependencias del backend para Vercel Functions
+  - `backend/services/bigquery.js`: soporte para `GCP_SERVICE_ACCOUNT` env var
+  - `backend/services/db.js`: modo in-memory cuando `VERCEL=1` (sin filesystem)
+  - `backend/routes/chat.js`: `tableDoc`/`basePrompt` pueden venir del request body
+  - `frontend/src/pages/Settings.jsx`: guarda config en `localStorage` además del servidor
+  - `frontend/src/pages/Home.jsx`: envía config desde `localStorage` con cada chat request; default config con tabla hardcodeada para funcionar sin servidor
+- **Pendiente**: historial de conversaciones no persiste en Vercel (filesystem efímero). Se migrará a Vercel KV o Firestore en sesión futura.
 
 #### DataTable — Columnas de Rate
 - Detección de columnas rate/porcentaje por nombre (`rate`, `tasa`, `ratio`, `pct`, `percent`, `porcentaje`, `conversion`) y por valor (todos los valores entre 0 y 1)
