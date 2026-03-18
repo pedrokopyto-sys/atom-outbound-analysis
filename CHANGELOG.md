@@ -28,6 +28,14 @@
 - Formato automático `XX.XX%` en columnas rate
 - Escala de colores heatmap rojo→verde por min/max en columnas rate
 - Escala invertida para columnas negativas (`error`, `fail`, `baja`, etc.)
+- Fix: detección `numericCols` cambiada de `every` a "≥80% numérico" para tolerar nulls
+- Fix: value-based rate detection requiere ≥3 valores y al menos uno entre 0 y 1 (evita falsos positivos)
+
+#### Filtros — movidos a Configuración
+- `FilterBar` eliminado de la pantalla principal (`Home.jsx`)
+- `Settings.jsx`: selectores empresa/días/límite guardan en `localStorage` como filtros por defecto
+- `Home.jsx`: lee filtros desde `localStorage` al iniciar; barra informativa muestra empresa activa con link "Cambiar"
+- Warning visible si no hay empresa configurada
 
 ---
 
