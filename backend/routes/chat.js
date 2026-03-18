@@ -1,0 +1,62 @@
+const express = require('express');
+const router = express.Router();
+const { generateSQL, summarizeResults } = require('../services/gemini');
+const { runQuery, getTableSchema } = require('../services/bigquery');
+const { getConfig, saveHistory } = require('../services/db');
+
+router.post('/', async (req, res) => {
+  try {
+    const { question, filters, previousResult = [] } = req.body;
+
+    if (!question || !filters) {
+      return res.status(400).json({ error: 'question y filters son requeridos' });
+    }
+
+    const tableDoc   = getConfig('table_doc')   || '';
+    const basePrompt = getConfig('base_prompt') || '';
+    const schema     = await getTableSchema(filters.table);
+
+    // Step 1: Gemini decides whether to query BQ or compute from existing data
+    const aiDecision = await generateSQL({ question, filters, tableDoc, schema, basePrompt, previousResult });
+
+    let results = [];
+    let sql = null;
+    const action = aiDecision.action;
+
+    if (action === 'query_bigquery') {
+      sql = aiDecision.sql;
+      results = await runQuery(sql);
+    } else if (action === 'compute_from_data') {
+      results = aiDecision.computed_result || [];
+    } else {
+      return res.status(500).json({ error: 'Respuesta inesperada de la IA' });
+    }
+
+    // Step 2: Gemini produces structured analysis
+    const analysis = await summarizeResults({ question, results, tableDoc, schema, basePrompt });
+
+    saveHistory({
+      question,
+      action,
+      sql_query: sql,
+      raw_results: results,
+      analisis:        analysis.analisis        || [],
+      recomendaciones: analysis.recomendaciones || [],
+      followups:       analysis.followups       || []
+    });
+
+    res.json({
+      action,
+      sql,
+      results,
+      analisis:        analysis.analisis        || [],
+      recomendaciones: analysis.recomendaciones || [],
+      followups:       analysis.followups       || []
+    });
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno y credenciales — NUNCA subir
+backend/.env
+backend/credentials/
+backend/data/
+
+# Build del frontend
+frontend/dist/
+
+# Sistema
+.DS_Store
+*.log
+
+# Vite
+frontend/.vite/
