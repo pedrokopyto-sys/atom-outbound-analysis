@@ -13,9 +13,10 @@ function isRateCol(name, allValues) {
   const lower = name.toLowerCase()
   // Strong name match
   if (RATE_NAME_PATTERNS.some(p => lower.includes(p))) return true
-  // Value-based: if every value is between 0 and 1 → decimal rate
-  const nums = allValues.filter(v => v != null && !isNaN(Number(v)))
-  if (nums.length > 0 && nums.every(v => Number(v) >= 0 && Number(v) <= 1)) return true
+  // Value-based: all numeric values strictly between 0 and 1 (decimal rates)
+  // Requires at least 3 values to avoid false positives on tiny datasets
+  const nums = allValues.filter(v => v != null && v !== '' && !isNaN(Number(v))).map(Number)
+  if (nums.length >= 3 && nums.every(v => v >= 0 && v <= 1) && nums.some(v => v > 0 && v < 1)) return true
   return false
 }
 
@@ -61,9 +62,14 @@ export default function DataTable({ rows }) {
 
   const columns = Object.keys(rows[0])
 
-  // Classify columns
+  // Classify columns — lenient: at least 80% of non-null values must be numeric
   const numericCols = new Set(
-    columns.filter(col => rows.slice(0, 10).every(r => isNumeric(r[col])))
+    columns.filter(col => {
+      const vals = rows.map(r => r[col]).filter(v => v != null && v !== '')
+      if (vals.length === 0) return false
+      const numCount = vals.filter(v => isNumeric(v)).length
+      return numCount / vals.length >= 0.8
+    })
   )
   const rateCols = new Set(
     columns.filter(col => numericCols.has(col) && isRateCol(col, rows.map(r => r[col])))
