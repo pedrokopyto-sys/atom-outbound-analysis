@@ -55,14 +55,13 @@ function getHistory() {
 function saveHistory(entry) {
   const record = {
     id: Date.now(),
-    question:        entry.question,
-    action:          entry.action          ?? null,
-    sql_query:       entry.sql_query       ?? null,
-    raw_results:     entry.raw_results     ?? null,
-    analisis:        entry.analisis        ?? [],
-    recomendaciones: entry.recomendaciones ?? [],
-    followups:       entry.followups       ?? [],
-    created_at: new Date().toISOString()
+    question:    entry.question,
+    action:      entry.action      ?? null,
+    sql_query:   entry.sql_query   ?? null,
+    raw_results: entry.raw_results ?? null,
+    respuesta:   entry.respuesta   ?? '',
+    followups:   entry.followups   ?? [],
+    created_at:  new Date().toISOString()
   };
   if (IS_VERCEL) {
     memHistory.push(record);

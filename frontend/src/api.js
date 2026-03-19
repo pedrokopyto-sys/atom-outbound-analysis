@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
-export const loadConfig    = ()             => api.get('/config/load').then(r => r.data)
+export const loadConfig    = (tableId)      => api.get(`/config/load${tableId ? `?tableId=${tableId}` : ''}`).then(r => r.data)
 export const saveConfig    = (data)         => api.post('/config/save', data).then(r => r.data)
 export const testBQ        = (data)         => api.post('/bq/test', data).then(r => r.data)
 export const getCompanies    = (tableId) => api.get(`/bq/companies?tableId=${tableId}&days=30`).then(r => r.data)

@@ -69,9 +69,9 @@ export default function Settings() {
   const labelCls = "block text-xs font-bold text-accent mb-1.5"
 
   useEffect(() => {
-    loadConfig().then(cfg => {
+    const savedTableId = localStorage.getItem('atom_table_id') || 'outbound_analysis'
+    loadConfig(savedTableId).then(cfg => {
       setTables(cfg.tables || [])
-      const savedTableId = localStorage.getItem('atom_table_id') || cfg.tables?.[0]?.id || ''
       setTestTableId(savedTableId)
       setTableDoc(localStorage.getItem(`atom_table_doc_${savedTableId}`) || cfg.tableDoc || '')
       setBasePrompt(localStorage.getItem(`atom_base_prompt_${savedTableId}`) || cfg.basePrompt || '')

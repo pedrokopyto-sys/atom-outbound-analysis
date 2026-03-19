@@ -44,13 +44,9 @@ export default function Home() {
   const bottomRef = useRef(null)
 
   useEffect(() => {
-    loadConfig()
-      .then(cfg => {
-        setConfig(cfg)
-        if (cfg.tables?.length > 0) {
-          setFilters(f => ({ ...f, tableId: cfg.tables[0].id }))
-        }
-      })
+    const savedTableId = localStorage.getItem('atom_table_id') || 'outbound_analysis'
+    loadConfig(savedTableId)
+      .then(cfg => setConfig(cfg))
       .catch(() => {})
   }, [])
 
