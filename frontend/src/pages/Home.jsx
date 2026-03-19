@@ -10,12 +10,12 @@ import FieldsModal from '../components/FieldsModal'
 import { loadConfig, sendChat, getHistory, clearHistory } from '../api'
 
 const PHRASES = [
-  'Entendé tus campañas.',
-  'Mejorá tus templates.',
-  'Descubrí qué mensajes convierten.',
-  'Conocé a tu audiencia.',
-  'Optimizá cada envío.',
-  'Tomá decisiones con datos reales.'
+  { emoji: '📊', text: 'Entendé tus campañas.' },
+  { emoji: '✍️', text: 'Mejorá tus templates.' },
+  { emoji: '🎯', text: 'Descubrí qué mensajes convierten.' },
+  { emoji: '👥', text: 'Conocé a tu audiencia.' },
+  { emoji: '🚀', text: 'Optimizá cada envío.' },
+  { emoji: '💡', text: 'Tomá decisiones con datos reales.' },
 ]
 
 export default function Home() {
@@ -166,9 +166,10 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] max-w-3xl mx-auto w-full">
-            <h1 key={phraseIdx} className="text-3xl font-bold text-gray-900 phrase-fade mb-8 text-center">
-              {PHRASES[phraseIdx]}
-            </h1>
+            <div key={phraseIdx} className="phrase-fade flex flex-col items-center mb-8 gap-2">
+              <span className="text-4xl">{PHRASES[phraseIdx].emoji}</span>
+              <h1 className="text-3xl font-bold text-gray-900 text-center">{PHRASES[phraseIdx].text}</h1>
+            </div>
 
             <div className="w-full relative">
               <ChatInput onSubmit={handleSend} disabled={loading} large />
