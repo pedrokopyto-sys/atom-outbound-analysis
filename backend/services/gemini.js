@@ -60,12 +60,21 @@ Si la pregunta se puede responder computando sobre los RESULTADOS ANTERIORES (ej
 - Para filtrar por fecha: usar la columna DATE del esquema. Rango: date >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
 - ${company ? `Filtrar por empresa: company_name = '${company.replace(/'/g, "\\'")}'` : 'No filtrar por empresa'}
 - Siempre incluir LIMIT ${limit}
-- ORDENAMIENTO: si la query incluye columnas de volumen o cantidad (total_sent, total_delivered, total_read, total_answered, total_sales, total_failed, COUNT(*), SUM(...) o cualquier alias numérico), siempre agregar ORDER BY esa columna DESC
 - DIVISIONES: SIEMPRE usar SAFE_DIVIDE(numerador, denominador) en lugar de numerador/denominador para evitar errores de división por cero
-- Cuando la pregunta sea sobre tipos de campaña, SIEMPRE usar el campo type_campaign (nunca campaign_type)
-- Cuando la pregunta sea sobre categorías, SIEMPRE usar el campo category
-- Cuando la pregunta sea sobre templates o copys, SIEMPRE usar el campo template_text
-- SIEMPRE incluir template_text en el SELECT de cualquier query sobre campañas, para que el análisis de copy esté disponible
+
+⚠️ REGLA OBLIGATORIA — CAMPOS DE CONTEXTO EN SELECT:
+Toda query sobre campañas DEBE incluir SIEMPRE estos campos en el SELECT (si existen en el esquema):
+  campaign_name, category, type_campaign, template_text
+Nunca omitirlos. Son imprescindibles para el análisis. Si usás GROUP BY, incluilos en el GROUP BY también.
+Ejemplo correcto: SELECT campaign_name, category, type_campaign, template_text, SUM(total_sent) AS total_sent, ...
+
+⚠️ REGLA OBLIGATORIA — ORDEN POR VOLUMEN:
+TODA query que devuelva campañas DEBE terminar con ORDER BY [métrica_principal] DESC.
+- Si la pregunta es general o sobre rendimiento: ORDER BY total_sent DESC (siempre el mayor volumen primero)
+- Si la pregunta es sobre ventas: ORDER BY total_sales DESC
+- Si la pregunta es sobre lectura/apertura: ORDER BY total_read DESC
+- Si la pregunta es sobre fallos: ORDER BY total_failed DESC
+NUNCA devolver campañas sin ordenar. El usuario siempre necesita ver las más importantes primero.
 
 PREGUNTA DEL USUARIO: ${question}`;
 
