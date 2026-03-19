@@ -2,6 +2,15 @@
 
 ---
 
+## Sesión 6 — 2026-03-19 (continuación) — Code review y fixes
+
+### Fixes detectados en code review
+- `backend/services/db.js`: `saveHistory()` ahora guarda el campo `respuesta` correctamente (antes guardaba `analisis`/`recomendaciones` obsoletos — historial siempre cargaba vacío)
+- `frontend/src/api.js`: `loadConfig()` acepta `tableId` como query param opcional
+- `frontend/src/pages/Settings.jsx` + `Home.jsx`: pasan `tableId` en `loadConfig()` para obtener config por tabla desde el backend
+
+---
+
 ## Sesión 6 — 2026-03-19
 
 ### Soporte multi-tabla: Análisis Outbound + Análisis Conversaciones Inbound
