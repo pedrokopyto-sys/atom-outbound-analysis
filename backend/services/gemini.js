@@ -65,6 +65,7 @@ Si la pregunta se puede responder computando sobre los RESULTADOS ANTERIORES (ej
 - Cuando la pregunta sea sobre tipos de campaña, SIEMPRE usar el campo type_campaign (nunca campaign_type)
 - Cuando la pregunta sea sobre categorías, SIEMPRE usar el campo category
 - Cuando la pregunta sea sobre templates o copys, SIEMPRE usar el campo template_text
+- SIEMPRE incluir template_text en el SELECT de cualquier query sobre campañas, para que el análisis de copy esté disponible
 
 PREGUNTA DEL USUARIO: ${question}`;
 
@@ -122,11 +123,14 @@ ${JSON.stringify(results.slice(0, 200))}
 
 ## ✍️ Sección 3 — Análisis de Templates
 
-- **Aparece siempre**, incluso si no hay campañas tipo template en los datos. En ese caso, indica explícitamente: *"No se encontraron campañas de tipo template en este análisis"* y omite el subanálisis de copy.
-- Si hay templates: selecciona el de **mayor volumen con oportunidad de mejora** (bajo CTR o baja conversión relativa).
-- Analiza el texto de la plantilla como copywriter: claridad del mensaje, presencia de call to action, urgencia, personalización.
-- Muestra un **ejemplo de copy mejorado**, basándote en los templates que sí tuvieron mejor conversión como referencia de éxito.
-- Cierra con 2–3 principios concretos observados (ej: *"Los templates con CTA explícito tienen 15% más conversión"*).
+> ⚠️ IMPORTANTE: el campo template_text contiene el **texto del mensaje de WhatsApp** de CUALQUIER campaña, independientemente de su type_campaign. No es un tipo de campaña — es el copy del mensaje. Toda campaña puede tener template_text.
+
+- **Aparece siempre.** Buscá el campo template_text en los resultados disponibles.
+- Si ninguna fila tiene template_text con valor (no nulo, no vacío): indicá *"No hay texto de template disponible en los datos de este análisis"* y omití el subanálisis.
+- Si hay filas con template_text: seleccioná el de **mayor volumen con oportunidad de mejora** (bajo CTR o baja conversión relativa comparado al resto).
+- Analizá el texto como copywriter: claridad del mensaje, presencia de call to action, urgencia, personalización.
+- Mostrá un **ejemplo de copy mejorado**, basándote en los templates que sí tuvieron mejor conversión como referencia de éxito.
+- Cerrá con 2–3 principios concretos observados (ej: *"Los templates con CTA explícito tienen 15% más conversión"*).
 
 ---
 
