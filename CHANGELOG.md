@@ -2,6 +2,27 @@
 
 ---
 
+## Sesión 6 — 2026-03-19
+
+### Soporte multi-tabla: Análisis Outbound + Análisis Conversaciones Inbound
+
+#### Backend
+- `backend/config/tables.js`: agregada segunda tabla `first_30_messages_last_30_days` con label "Análisis Conversaciones Inbound"
+  - ⚠️ **Pendiente**: configurar `dateColumn`, `companyColumn`, `tableDoc` y `basePrompt` correctos para esta tabla en sesión futura (los campos son distintos a `outbound_analysis`)
+- `backend/routes/config.js`: load y save de config ahora son por tabla (`table_doc_${tableId}`, `base_prompt_${tableId}`)
+
+#### Frontend
+- `Settings.jsx`: selector "Tipo de análisis" (full width, arriba de los filtros) que muestra ambas tablas
+  - Al cambiar tabla: carga la config específica de esa tabla desde localStorage
+  - Guardar filtros también guarda `atom_table_id` en localStorage
+  - Guardar prompt/doc guarda con key por tabla (`atom_table_doc_${tableId}`, `atom_base_prompt_${tableId}`)
+- `Home.jsx`: lee `atom_table_id` de localStorage al iniciar
+  - Barra de filtros activos muestra el nombre del análisis activo + empresa + días + límite
+  - `getClientConfig()` lee `tableDoc`/`basePrompt` por tabla activa
+  - DEFAULT_CONFIG incluye ambas tablas
+
+---
+
 ## Sesión 5 — 2026-03-19
 
 ### Nuevo sistema de análisis: identidad de consultor + respuesta Markdown estructurada

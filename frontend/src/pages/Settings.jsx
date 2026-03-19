@@ -70,15 +70,20 @@ export default function Settings() {
 
   useEffect(() => {
     loadConfig().then(cfg => {
-      setTableDoc(cfg.tableDoc || '')
-      setBasePrompt(cfg.basePrompt || '')
       setTables(cfg.tables || [])
-      setTestTableId(cfg.tables?.[0]?.id || '')
+      const savedTableId = localStorage.getItem('atom_table_id') || cfg.tables?.[0]?.id || ''
+      setTestTableId(savedTableId)
+      setTableDoc(localStorage.getItem(`atom_table_doc_${savedTableId}`) || cfg.tableDoc || '')
+      setBasePrompt(localStorage.getItem(`atom_base_prompt_${savedTableId}`) || cfg.basePrompt || '')
     })
   }, [])
 
   useEffect(() => {
     if (!testTableId) return
+    // cargar config específica de la tabla seleccionada
+    setTableDoc(localStorage.getItem(`atom_table_doc_${testTableId}`) || '')
+    setBasePrompt(localStorage.getItem(`atom_base_prompt_${testTableId}`) || '')
+    // cargar empresas de la tabla seleccionada
     setLoadingCo(true)
     getCompanies(testTableId)
       .then(list => setCompanies(list))
@@ -87,9 +92,9 @@ export default function Settings() {
   }, [testTableId])
 
   const handleSaveFromModal = async () => {
-    localStorage.setItem('atom_table_doc',   tableDoc)
-    localStorage.setItem('atom_base_prompt', basePrompt)
-    await saveConfig({ tableDoc, basePrompt }).catch(() => {})
+    localStorage.setItem(`atom_table_doc_${testTableId}`,   tableDoc)
+    localStorage.setItem(`atom_base_prompt_${testTableId}`, basePrompt)
+    await saveConfig({ tableDoc, basePrompt, tableId: testTableId }).catch(() => {})
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
     setEditModal(null)
@@ -97,9 +102,10 @@ export default function Settings() {
 
   const handleSaveFilters = () => {
     if (!testCompany) return
-    localStorage.setItem('atom_company', testCompany)
-    localStorage.setItem('atom_days',    String(testDays))
-    localStorage.setItem('atom_limit',   String(testLimit))
+    localStorage.setItem('atom_table_id', testTableId)
+    localStorage.setItem('atom_company',  testCompany)
+    localStorage.setItem('atom_days',     String(testDays))
+    localStorage.setItem('atom_limit',    String(testLimit))
     setFiltersSaved(true)
     setTimeout(() => setFiltersSaved(false), 2500)
   }
@@ -203,8 +209,8 @@ export default function Settings() {
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Tabla</label>
+              <div className="col-span-2">
+                <label className={labelCls}>Tipo de análisis</label>
                 <select value={testTableId} onChange={e => setTestTableId(e.target.value)} className={selectCls}>
                   {tables.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>

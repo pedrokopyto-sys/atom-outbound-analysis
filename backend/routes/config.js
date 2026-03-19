@@ -5,9 +5,11 @@ const TABLES = require('../config/tables');
 
 router.get('/load', (req, res) => {
   try {
+    const { tableId } = req.query;
+    const suffix = tableId ? `_${tableId}` : '';
     res.json({
-      tableDoc: getConfig('table_doc') || '',
-      basePrompt: getConfig('base_prompt') || 'Sos un analista experto en campañas de WhatsApp. Tu objetivo es ayudar al usuario a entender el rendimiento de sus campañas, identificar oportunidades de mejora y sugerir acciones concretas basadas en datos.',
+      tableDoc:   getConfig(`table_doc${suffix}`)   || '',
+      basePrompt: getConfig(`base_prompt${suffix}`) || '',
       tables: TABLES
     });
   } catch (err) {
@@ -17,9 +19,10 @@ router.get('/load', (req, res) => {
 
 router.post('/save', (req, res) => {
   try {
-    const { tableDoc, basePrompt } = req.body;
-    if (tableDoc !== undefined) setConfig('table_doc', tableDoc);
-    if (basePrompt !== undefined) setConfig('base_prompt', basePrompt);
+    const { tableDoc, basePrompt, tableId } = req.body;
+    const suffix = tableId ? `_${tableId}` : '';
+    if (tableDoc   !== undefined) setConfig(`table_doc${suffix}`,   tableDoc);
+    if (basePrompt !== undefined) setConfig(`base_prompt${suffix}`, basePrompt);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

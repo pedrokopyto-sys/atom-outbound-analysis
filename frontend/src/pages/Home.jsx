@@ -21,13 +21,16 @@ const PHRASES = [
 export default function Home() {
   const navigate = useNavigate()
   const DEFAULT_CONFIG = {
-    tables: [{ id: 'outbound_analysis', label: 'Outbound Analysis', fullName: 'atom-ai-labs-ad1fa.conversational_ai_lab.outbound_analysis' }],
+    tables: [
+      { id: 'outbound_analysis', label: 'Análisis Outbound', fullName: 'atom-ai-labs-ad1fa.conversational_ai_lab.outbound_analysis' },
+      { id: 'first_30_messages_last_30_days', label: 'Análisis Conversaciones Inbound', fullName: 'atom-ai-labs-ad1fa.conversational_ai_lab.first_30_messages_last_30_days' }
+    ],
     tableDoc: '',
     basePrompt: ''
   }
   const [config, setConfig] = useState(DEFAULT_CONFIG)
   const [filters, setFilters] = useState({
-    tableId: 'outbound_analysis',
+    tableId: localStorage.getItem('atom_table_id') || 'outbound_analysis',
     days:    parseInt(localStorage.getItem('atom_days')    || '7'),
     company: localStorage.getItem('atom_company') || '',
     limit:   parseInt(localStorage.getItem('atom_limit')   || '100')
@@ -68,9 +71,12 @@ export default function Home() {
     return last?.data?.results || []
   }
 
+  const getActiveTableLabel = () =>
+    config?.tables?.find(t => t.id === filters.tableId)?.label || filters.tableId
+
   const getClientConfig = () => ({
-    tableDoc:   localStorage.getItem('atom_table_doc')   || '',
-    basePrompt: localStorage.getItem('atom_base_prompt') || ''
+    tableDoc:   localStorage.getItem(`atom_table_doc_${filters.tableId}`)   || '',
+    basePrompt: localStorage.getItem(`atom_base_prompt_${filters.tableId}`) || ''
   })
 
   const handleSend = async (question) => {
@@ -148,6 +154,8 @@ export default function Home() {
       {/* Active filters bar */}
       {filters.company ? (
         <div className="px-6 py-2 border-b border-orange-100 bg-white/60 flex items-center gap-3 text-xs text-gray-500">
+          <span className="font-semibold text-gray-700">{getActiveTableLabel()}</span>
+          <span>·</span>
           <span className="font-bold text-accent">{filters.company}</span>
           <span>·</span>
           <span>Últimos {filters.days} días</span>
