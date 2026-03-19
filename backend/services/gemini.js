@@ -44,6 +44,15 @@ Si la pregunta requiere consultar BigQuery para obtener datos nuevos o diferente
 Si la pregunta se puede responder computando sobre los RESULTADOS ANTERIORES (ej: sumar, reagrupar, filtrar los ya obtenidos):
 {"action":"compute_from_data","computed_result":[...array de objetos...],"computation_description":"descripción breve"}
 
+═══ CAMPOS CLAVE DE NEGOCIO (nombres EXACTOS de columna) ═══
+- Nombre de campaña   → campaign_name
+- Categoría           → category
+- Tipo de campaña     → type_campaign   ⚠️ NO usar "campaign_type" — el nombre correcto es type_campaign
+- Texto del template  → template_text
+- Empresa             → company_name
+- Fecha               → date
+- Columnas de volumen: total_sent, total_delivered, total_read, total_answered, total_sales, total_failed
+
 ═══ REGLAS CRÍTICAS PARA SQL ═══
 - SOLO usa los nombres de columna que aparecen en el ESQUEMA REAL DE LA TABLA arriba. NUNCA inventes nombres.
 - Solo SELECT — prohibido INSERT/UPDATE/DELETE/DROP/ALTER/CREATE/TRUNCATE
@@ -51,8 +60,11 @@ Si la pregunta se puede responder computando sobre los RESULTADOS ANTERIORES (ej
 - Para filtrar por fecha: usar la columna DATE del esquema. Rango: date >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
 - ${company ? `Filtrar por empresa: company_name = '${company.replace(/'/g, "\\'")}'` : 'No filtrar por empresa'}
 - Siempre incluir LIMIT ${limit}
-- ORDENAMIENTO: si la query incluye columnas de volumen o cantidad (total_sent, total_delivered, total_read, total_answered, total_sales, total_failed, total_asignados, COUNT(*), SUM(...) o cualquier alias numérico), siempre agregar ORDER BY esa columna DESC
+- ORDENAMIENTO: si la query incluye columnas de volumen o cantidad (total_sent, total_delivered, total_read, total_answered, total_sales, total_failed, COUNT(*), SUM(...) o cualquier alias numérico), siempre agregar ORDER BY esa columna DESC
 - DIVISIONES: SIEMPRE usar SAFE_DIVIDE(numerador, denominador) en lugar de numerador/denominador para evitar errores de división por cero
+- Cuando la pregunta sea sobre tipos de campaña, SIEMPRE usar el campo type_campaign (nunca campaign_type)
+- Cuando la pregunta sea sobre categorías, SIEMPRE usar el campo category
+- Cuando la pregunta sea sobre templates o copys, SIEMPRE usar el campo template_text
 
 PREGUNTA DEL USUARIO: ${question}`;
 
@@ -127,6 +139,21 @@ ${JSON.stringify(results.slice(0, 200))}
 
 ---
 
+# CAMPOS CLAVE DE NEGOCIO (nombres EXACTOS en la tabla)
+
+| Concepto | Nombre exacto del campo | ⚠️ Nunca usar |
+|---|---|---|
+| Nombre de campaña | campaign_name | — |
+| Categoría | category | — |
+| Tipo de campaña | type_campaign | ~~campaign_type~~ |
+| Texto del template/copy | template_text | — |
+| Empresa | company_name | — |
+
+Cuando menciones estos datos en el análisis, usá los valores reales de estos campos tal como aparecen en los resultados.
+Para la Sección 3 (Análisis de Templates), el campo a analizar es **template_text** y el tipo de campaña es **type_campaign**.
+
+---
+
 # REGLAS DE ANÁLISIS
 
 - Nunca analices campañas por debajo del 5% del volumen máximo.
@@ -135,6 +162,7 @@ ${JSON.stringify(results.slice(0, 200))}
 - Cuando compares tasas, **siempre incluye el denominador** (ej: *"10% de conversión sobre 500 envíos"*, no solo *"10%"*).
 - Si detectas datos atípicos (outliers), mencionarlos en la sección de recomendaciones.
 - Nunca menciones otras empresas. El análisis es siempre dentro de la empresa filtrada.
+- PRIORIDAD DE ANÁLISIS: cuando sea relevante, analizá y mencioná en este orden: campaign_name → category → type_campaign → template_text.
 
 ---
 
