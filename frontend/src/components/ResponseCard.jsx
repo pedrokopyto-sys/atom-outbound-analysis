@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Download, RefreshCw, Copy, Check, Code2, ChevronRight, TableProperties, MessageCircleQuestion } from 'lucide-react'
 import Papa from 'papaparse'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import DataTable from './DataTable'
 import SqlModal from './SqlModal'
 
@@ -34,7 +36,17 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
 
       {/* ── 1. Respuesta ── */}
       {respuesta && (
-        <p className="text-sm text-gray-800 leading-relaxed">{respuesta}</p>
+        <div className="prose prose-sm max-w-none text-gray-800
+          prose-headings:font-bold prose-headings:text-gray-900
+          prose-h2:text-base prose-h2:mt-5 prose-h2:mb-2
+          prose-p:leading-relaxed prose-p:my-1
+          prose-strong:text-gray-900
+          prose-table:text-xs prose-table:w-full
+          prose-th:bg-gray-50 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold
+          prose-td:px-3 prose-td:py-2 prose-td:border-b prose-td:border-gray-100
+          prose-li:my-0.5">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{respuesta}</ReactMarkdown>
+        </div>
       )}
 
       {/* ── 3. Follow-up buttons (izquierda) ── */}

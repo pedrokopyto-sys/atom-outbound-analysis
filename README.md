@@ -4,7 +4,7 @@ App de análisis conversacional de campañas de WhatsApp conectada a BigQuery, p
 
 ## Descripción
 
-Permite hacer preguntas en lenguaje natural sobre datos de campañas outbound de una empresa específica. La app traduce las preguntas a SQL sobre BigQuery, ejecuta las queries y devuelve respuestas estructuradas con análisis, recomendaciones y preguntas de profundización.
+Permite hacer preguntas en lenguaje natural sobre datos de campañas outbound de una empresa específica. La app traduce las preguntas a SQL sobre BigQuery, ejecuta las queries y devuelve una respuesta directa de consultor con preguntas de profundización y acceso a la tabla de datos completa.
 
 ## Stack Tecnológico
 
@@ -44,10 +44,9 @@ Node.js + Express (http://localhost:3001 / Vercel Functions /api/server)
 3. Backend inyecta schema real de la tabla + documentación + resultado previo
 4. Gemini decide: **`query_bigquery`** (nueva query) o **`compute_from_data`** (opera sobre datos anteriores)
 5. Segunda llamada a Gemini genera respuesta estructurada:
-   - **Análisis** — 3 hallazgos concretos
-   - **Recomendaciones** — 3 acciones accionables
-   - **Tabla resumen** — top 5 filas ordenadas por volumen
-   - **Follow-ups** — 2 preguntas de profundización específicas al contexto
+   - **Respuesta** — párrafo único de consultor, máx. 3 oraciones, con datos concretos
+   - **Follow-ups** — 2 preguntas consultables contra la misma tabla
+   - **Tabla de datos** — se muestra solo si el usuario presiona "Ver tabla de datos"
 6. Respuesta guardada en historial
 
 ## Deploy en Vercel

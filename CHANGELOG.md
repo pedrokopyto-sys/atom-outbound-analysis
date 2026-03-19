@@ -2,6 +2,55 @@
 
 ---
 
+## Sesión 5 — 2026-03-19
+
+### Nuevo sistema de análisis: identidad de consultor + respuesta Markdown estructurada
+
+#### Backend (`backend/services/gemini.js`)
+- `summarizeResults()` reescrito completamente con nueva identidad y flujo de análisis
+- Gemini actúa como **analista de marketing + especialista en copywriting**
+- Filtro de volumen automático: excluye campañas con envíos < 5% del máximo del conjunto
+- Limita análisis a **Top 5** campañas más relevantes según la métrica de la pregunta
+- Respuesta siempre estructurada en **3 secciones fijas** devueltas como Markdown dentro del JSON:
+  1. **📊 Sección 1 — Respuesta**: tabla Markdown Top 5 + oración intro + negritas en valores clave
+  2. **🔍 Sección 2 — Recomendaciones y Análisis**: patrones, anomalías, mín. 2 observaciones accionables con datos concretos
+  3. **✍️ Sección 3 — Análisis de Templates**: siempre presente; analiza copy del template con mayor oportunidad de mejora y propone versión mejorada; si no hay templates lo indica explícitamente
+- Follow-ups: 2 preguntas consultables contra la misma tabla BigQuery, nunca comparar empresas
+- Español siempre, emojis en puntos clave, denominador siempre incluido en tasas
+
+#### Frontend (`frontend/src/components/ResponseCard.jsx`, `frontend/tailwind.config.js`)
+- Respuesta renderizada como **Markdown completo** usando `react-markdown` + `remark-gfm`
+- Soporte nativo para tablas Markdown, negritas, cursivas y emojis
+- Estilos tipográficos con `@tailwindcss/typography` (clases `prose`)
+
+#### Dependencias nuevas
+- `react-markdown` — renderizado de Markdown en React
+- `remark-gfm` — soporte para tablas y GFM en react-markdown
+- `@tailwindcss/typography` — plugin Tailwind para estilizar contenido Markdown
+
+---
+
+## Sesión 4 — 2026-03-17
+
+### Nuevo formato de respuesta y rediseño de ResponseCard
+
+#### Backend (`backend/services/gemini.js`, `backend/routes/chat.js`)
+- `summarizeResults()` reemplazado completamente: ya no devuelve `{ analisis[], recomendaciones[], followups[] }` sino `{ respuesta, followups[] }`
+- `respuesta`: texto corrido, máx. 3 oraciones, tono de consultor, contesta directamente la pregunta con datos reales
+- `followups`: 2 preguntas que DEBEN poder responderse con una query a la misma tabla BigQuery (no preguntas genéricas)
+- Prioridad de análisis inyectada en el prompt: `campaign_name → category → campaign_type → template_text`
+- Filtro de volumen: Gemini ignora campañas con envíos insignificantes vs. el resto y puede mencionarlo en la respuesta
+- `chat.js`: guarda y devuelve `respuesta` en lugar de `analisis`/`recomendaciones`
+
+#### Frontend (`frontend/src/components/ResponseCard.jsx`, `frontend/src/pages/Home.jsx`)
+- `ResponseCard`: layout simplificado — un solo bloque de texto para la respuesta (sin columnas, sin listas)
+- Tabla de datos oculta por defecto — botón grande con borde punteado naranja "Ver tabla de datos (N registros)" la despliega
+- Botón "Ocultar" para volver a colapsar la tabla
+- Follow-ups: botones alineados a la izquierda (antes centrados), con chevron a la izquierda
+- `Home.jsx`: `handleHistoryItem` actualizado para usar campo `respuesta` al cargar historial
+
+---
+
 ## Sesión 3 — 2026-03-17
 
 ### Git, deploy y mejoras de tablas
