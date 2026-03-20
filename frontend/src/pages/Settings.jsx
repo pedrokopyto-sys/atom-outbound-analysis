@@ -173,8 +173,21 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Tipo de análisis — full width, centrado */}
+      <div className="border-b border-orange-100 bg-white px-6 py-6 flex flex-col items-center gap-2">
+        <label className="text-xs font-bold text-accent uppercase tracking-wider">Tipo de análisis</label>
+        <select
+          value={testTableId}
+          onChange={e => setTestTableId(e.target.value)}
+          className="w-full max-w-sm text-base font-semibold text-gray-900 bg-orange-50 border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-accent cursor-pointer text-center"
+        >
+          {tables.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+        </select>
+        <p className="text-xs text-gray-400">Cambia la tabla de datos y su configuración</p>
+      </div>
+
       {/* 2-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-[calc(100vh-56px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-[calc(100vh-56px-97px)]">
 
         {/* ── LEFT: Configuration ── */}
         <div className="overflow-y-auto p-6 border-r border-gray-100">
@@ -291,12 +304,6 @@ export default function Settings() {
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className={labelCls}>Tipo de análisis</label>
-                <select value={testTableId} onChange={e => setTestTableId(e.target.value)} className={selectCls}>
-                  {tables.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                </select>
-              </div>
               <div>
                 <label className={labelCls}>Días hacia atrás</label>
                 <select value={testDays} onChange={e => setTestDays(parseInt(e.target.value))} className={selectCls}>
