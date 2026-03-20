@@ -20,6 +20,7 @@ router.post('/', async (req, res) => {
 
     let results = [];
     let sql = null;
+    let action = 'query_bigquery';
     let analysis;
 
     if (isInbound) {
