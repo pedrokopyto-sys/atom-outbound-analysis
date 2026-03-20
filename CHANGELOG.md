@@ -2,6 +2,14 @@
 
 ---
 
+## Sesión 6 — 2026-03-19 (continuación 2) — Fixes SQL
+
+### Fixes en generación de queries (`backend/services/gemini.js`)
+- **Campos de contexto obligatorios en SELECT**: toda query sobre campañas DEBE incluir `campaign_name`, `category`, `type_campaign`, `template_text`. Antes Gemini los omitía (ej: agrupaba solo por `campaign_name`) dejando esas columnas vacías en la respuesta.
+- **ORDER BY volumen reforzado como regla inamovible**: toda query que devuelva campañas DEBE ordenar por la métrica principal DESC — `total_sent` por defecto, o la métrica relevante según la pregunta (ventas, lectura, fallos). Antes era una sugerencia que Gemini podía ignorar.
+
+---
+
 ## Sesión 6 — 2026-03-19 (continuación) — Code review y fixes
 
 ### Fixes detectados en code review
