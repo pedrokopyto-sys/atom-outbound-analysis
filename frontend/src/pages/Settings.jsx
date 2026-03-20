@@ -31,6 +31,8 @@ REGLAS:
 - Denominador siempre incluido en tasas (ej: "10% sobre 500 envíos")
 - Nunca comparar entre empresas`
 
+const SYSTEM_PROMPT_INBOUND = `IDENTIDAD: Eres una analista de conversaciones experta en flujos conversacionales.`
+
 function EditModal({ title, description, value, onChange, onClose, onSave, saving, placeholder, mono }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -213,7 +215,7 @@ export default function Settings() {
               <p className="text-xs text-gray-400 mb-2">Configurado internamente. No editable.</p>
               {promptExpanded && (
                 <pre className="text-xs text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-3 whitespace-pre-wrap leading-relaxed font-mono">
-                  {SYSTEM_PROMPT}
+                  {testTableId === 'first_30_messages_last_30_days' ? SYSTEM_PROMPT_INBOUND : SYSTEM_PROMPT}
                 </pre>
               )}
             </div>
