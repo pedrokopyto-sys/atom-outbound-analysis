@@ -67,8 +67,8 @@ router.get('/description', async (req, res) => {
   try {
     const { tableId } = req.query;
     const table = TABLES.find(t => t.id === tableId) || TABLES[0];
-    const description = await getTableDescription(table.fullName);
-    res.json({ description });
+    const result = await getTableDescription(table.fullName);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

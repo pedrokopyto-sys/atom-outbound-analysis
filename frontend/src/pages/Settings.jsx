@@ -82,7 +82,7 @@ export default function Settings() {
   const [saved, setSaved] = useState(false)
   const [editModal, setEditModal] = useState(null)
   const [promptExpanded, setPromptExpanded] = useState(false)
-  const [tableDescription, setTableDescription] = useState('')
+  const [tableDescription, setTableDescription] = useState({ description: '', columns: [] })
   const [loadingDesc, setLoadingDesc] = useState(false)
 
   const [testTableId, setTestTableId] = useState('')
@@ -120,8 +120,8 @@ export default function Settings() {
       .finally(() => setLoadingCo(false))
     setLoadingDesc(true)
     getTableDescription(testTableId)
-      .then(desc => setTableDescription(desc))
-      .catch(() => setTableDescription(''))
+      .then(data => setTableDescription(data))
+      .catch(() => setTableDescription({ description: '', columns: [] }))
       .finally(() => setLoadingDesc(false))
   }, [testTableId])
 
@@ -232,13 +232,42 @@ export default function Settings() {
                 <Lock size={12} className="text-accent" />
                 <p className="text-sm font-semibold text-gray-800">Documentación de tabla</p>
               </div>
-              <p className="text-xs text-gray-400 mb-2">Descripción oficial cargada desde BigQuery.</p>
-              {loadingDesc
-                ? <p className="text-xs text-gray-400 italic">Cargando…</p>
-                : tableDescription
-                  ? <p className="text-xs text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2 leading-relaxed">{tableDescription}</p>
-                  : <p className="text-xs text-gray-400 italic">Sin descripción configurada en BigQuery para esta tabla.</p>
-              }
+              <p className="text-xs text-gray-400 mb-3">Descripción y campos cargados desde BigQuery.</p>
+              {loadingDesc ? (
+                <p className="text-xs text-gray-400 italic">Cargando…</p>
+              ) : (
+                <>
+                  {tableDescription.description && (
+                    <p className="text-xs text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2 mb-3 leading-relaxed">
+                      {tableDescription.description}
+                    </p>
+                  )}
+                  {tableDescription.columns?.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-gray-100">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-orange-50 border-b border-orange-100">
+                            <th className="px-3 py-2 text-left font-bold text-accent whitespace-nowrap">Campo</th>
+                            <th className="px-3 py-2 text-left font-bold text-accent whitespace-nowrap">Tipo</th>
+                            <th className="px-3 py-2 text-left font-bold text-accent">Descripción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tableDescription.columns.map((col, i) => (
+                            <tr key={i} className="border-b border-gray-50 hover:bg-orange-50/40">
+                              <td className="px-3 py-2 font-mono text-gray-800 whitespace-nowrap">{col.name}</td>
+                              <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{col.type}</td>
+                              <td className="px-3 py-2 text-gray-500">{col.description || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    !tableDescription.description && <p className="text-xs text-gray-400 italic">Sin descripción configurada en BigQuery para esta tabla.</p>
+                  )}
+                </>
+              )}
             </div>
 
           </div>
