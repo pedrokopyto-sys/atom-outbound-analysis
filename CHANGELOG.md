@@ -2,6 +2,23 @@
 
 ---
 
+## Sesión 7 — 2026-03-20 (continuación 2) — Formato respuesta inbound + fix action
+
+### Fix crítico (`backend/routes/chat.js`)
+- `action` declarada fuera del if/else → ya no lanza "action is not defined" en modo inbound
+
+### Nuevo formato de respuesta inbound (`backend/services/gemini.js`)
+- `summarizeInbound` reescrito: responde con exactamente **3 bullets Markdown**
+- Ordenados de mayor a menor frecuencia de aparición en las conversaciones
+- Cada bullet incluye:
+  - Hallazgo en **negrita**
+  - Dato numérico: X/Y conversaciones y porcentaje (ej: "45/100, 45%")
+  - Cita textual real del campo `text` entre comillas
+- Sin secciones extra, sin introducción, sin conclusión — solo los 3 bullets
+- Prompt simplificado: identidad corta de "analista de conversaciones experta en flujos conversacionales"
+
+---
+
 ## Sesión 7 — 2026-03-20 (continuación) — Fixes inbound
 
 ### Fixes post-implementación inbound
