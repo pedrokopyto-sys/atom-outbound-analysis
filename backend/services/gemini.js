@@ -240,62 +240,73 @@ async function summarizeInbound({ question, results, tableDoc, schema, basePromp
     catch { return row }
   });
 
-  const prompt = `# IDENTIDAD Y ROL
+  const prompt = `# ROL
 
-Eres una analista de conversaciones experta en flujos conversacionales.
+Eres un analista experto en conversaciones de ventas y atención al cliente. Recibís un dataset de conversaciones de WhatsApp y respondés preguntas estratégicas sobre ellas.
 
 ---
 
 # ESTRUCTURA DE LOS DATOS
 
-Tenés ${parsedResults.length} conversaciones de WhatsApp. Cada fila tiene un campo **text** que es un array JSON con todos los mensajes de esa conversación:
+Tenés ${parsedResults.length} conversaciones. Cada fila tiene un campo **text** con un array de mensajes:
 [{"created_at": "...", "sender": "...", "text": "..."}]
 
-**Clasificación de senders:**
-- \`CLIENT\` → el cliente/prospecto
-- \`USER\` → agente humano de la empresa
-- Cualquier otro valor (ATOM, flow_builder, etc.) → el bot
+Clasificación de senders:
+- CLIENT → el prospecto/cliente
+- USER → agente humano de la empresa
+- Cualquier otro valor (ATOM, flow_builder, etc.) → bot automático
+- Un mensaje con text: null cuenta como mensaje enviado (imagen, archivo, sticker)
 
-${tableDoc ? `DOCUMENTACIÓN:\n${tableDoc}\n` : ''}
-${basePrompt ? `INSTRUCCIONES ADICIONALES:\n${basePrompt}\n` : ''}
+---
+
+# CÓMO LEER UNA CONVERSACIÓN
+
+1. Ordená los mensajes por created_at para reconstruir el hilo cronológico.
+2. Identificá los turnos: bot → client → user → client, etc.
+3. Calculá el tiempo entre mensajes para detectar silencios o abandono.
+
+---
+
+# DEFINICIONES CLAVE
+
+- Abandono: el CLIENT deja de responder después de un mensaje del bot o user, sin retomar.
+- Fricción del bot: pregunta no entendida, respuesta irrelevante, mensaje repetido, silencio largo, flujo cortado.
+- Conversión: el CLIENT realiza una acción esperada (pago, confirmación, agendamiento, etc.).
+- Reenganche: el bot o user envía un follow-up después de silencio del CLIENT.
+
+---
+
+${tableDoc ? `DOCUMENTACIÓN DE LA TABLA:\n${tableDoc}\n\n---\n` : ''}
+${basePrompt ? `INSTRUCCIONES ADICIONALES:\n${basePrompt}\n\n---\n` : ''}
 
 CONVERSACIONES (${parsedResults.length} filas):
 ${JSON.stringify(parsedResults.slice(0, 100))}
 
 ---
 
-# INSTRUCCIONES
+# FORMATO DE RESPUESTA OBLIGATORIO
 
-1. Leé el campo **text** de cada conversación. Procesá los mensajes de cada sender.
-2. Respondé directamente a la pregunta del usuario analizando los patrones reales.
-3. Tu respuesta debe ser **exactamente 3 bullets en Markdown**, sin secciones ni títulos extra.
-4. Cada bullet representa un hallazgo o patrón encontrado en las conversaciones.
-5. Ordená los bullets de **mayor a menor frecuencia** (el más común primero).
-6. Cada bullet DEBE incluir:
-   - El patrón o hallazgo en **negrita**
-   - Dato numérico o porcentaje (ej: "presente en 45/100 conversaciones, 45%")
-   - Al menos 1 cita o ejemplo real de mensaje de cliente entre comillas
+Respondé con **exactamente 3 bullets Markdown**, sin títulos, sin introducción, sin conclusión.
+Ordená de **mayor a menor frecuencia** (el más común primero).
 
----
+Cada bullet DEBE tener:
+1. Hallazgo en **negrita**
+2. Dato numérico: X/Y conversaciones (Z%)
+3. Cita textual real entre comillas: *"mensaje real"*
+4. 1-2 oraciones de evidencia o contexto
+5. Recomendación accionable si la pregunta lo requiere
 
-# FORMATO EXACTO DE RESPUESTA
-
-\`\`\`
-• **[Hallazgo principal]** — presente en X/Y conversaciones (Z%): *"cita real del cliente"*. [1-2 oraciones de contexto o patrón observado.]
-
-• **[Segundo hallazgo]** — presente en X/Y conversaciones (Z%): *"cita real"*. [Contexto.]
-
-• **[Tercer hallazgo]** — presente en X/Y conversaciones (Z%): *"cita real"*. [Contexto.]
-\`\`\`
+Ejemplo de formato:
+• **[Hallazgo]** — presente en X/Y conversaciones (Z%): *"cita real"*. [Contexto y evidencia.] [Recomendación si aplica.]
 
 ---
 
-# REGLAS
+# RESTRICCIONES
 
 - Español siempre.
-- Solo 3 bullets. Sin introducciones, sin conclusiones, sin secciones adicionales.
-- Nunca inventes datos. Todo debe venir de las conversaciones reales.
-- Si los datos son insuficientes indicalo en el primer bullet.
+- No inventes datos. Si la información no está en las conversaciones, decilo.
+- No ignores mensajes null — registra que hubo un mensaje sin texto.
+- No asumas intención del CLIENT si no está explícita en sus mensajes.
 - Nunca menciones otras empresas.
 
 ---
