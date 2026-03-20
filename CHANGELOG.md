@@ -2,6 +2,27 @@
 
 ---
 
+## Sesión 6 — 2026-03-19 (continuación 3) — Settings redesign
+
+### Rediseño de sección Configuración en Settings
+
+#### Layout
+- Selector **"Tipo de análisis"** movido al tope de la página, full-width, centrado y más grande — comunica que cambia toda la configuración
+- El resto de la pantalla sigue dividido en 2 columnas (configuración | filtros y conexión)
+
+#### Columna izquierda — nueva estructura
+- **Prompt del sistema** (candado 🔒): bloque colapsable de solo lectura con el prompt quemado (identidad, flujo, secciones, campos clave, reglas)
+- **Instrucciones adicionales**: pop-up editable para contexto extra (antes llamado "Prompt base del sistema")
+- **Documentación de tabla** (candado 🔒): descripción general + tabla de campos (nombre, tipo, descripción) cargada desde `table.getMetadata()` de BigQuery
+  - Fix: las descripciones de campos se leen desde `metadata.schema.fields`, no desde `INFORMATION_SCHEMA` que no las expone
+
+#### Backend
+- `backend/services/bigquery.js`: `getTableDescription()` reescrita — usa `table.getMetadata()` y extrae `schema.fields` con nombre, tipo y descripción por campo
+- `backend/routes/bigquery.js`: endpoint `/api/bq/description` devuelve `{ description, columns[] }`
+- `frontend/src/api.js`: `getTableDescription(tableId)` agregado
+
+---
+
 ## Sesión 6 — 2026-03-19 (continuación 2) — Fixes SQL
 
 ### Fixes en generación de queries (`backend/services/gemini.js`)
