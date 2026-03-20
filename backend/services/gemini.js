@@ -5,7 +5,21 @@ const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
 function parseJSON(text) {
   const cleaned = text.trim().replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Gemini sometimes includes literal control characters inside JSON string values
+    // (e.g. real newlines in conversation quotes). Sanitize only within strings.
+    const sanitized = cleaned.replace(
+      /"((?:[^"\\]|\\.)*)"/gs,
+      (_, content) => '"' + content
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
+    );
+    return JSON.parse(sanitized);
+  }
 }
 
 async function generateSQL({ question, filters, tableDoc, schema, basePrompt, previousResult }) {
