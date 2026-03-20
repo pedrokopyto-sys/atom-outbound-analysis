@@ -234,6 +234,12 @@ LIMIT ${limit}`;
 }
 
 async function summarizeInbound({ question, results, tableDoc, schema, basePrompt }) {
+  // Pre-parse the `text` field so Gemini receives actual message arrays, not escaped JSON strings
+  const parsedResults = results.map(row => {
+    try { return { ...row, text: JSON.parse(row.text) } }
+    catch { return row }
+  });
+
   const prompt = `# IDENTIDAD Y ROL
 
 Eres una analista de conversaciones experta en flujos conversacionales.
@@ -242,7 +248,7 @@ Eres una analista de conversaciones experta en flujos conversacionales.
 
 # ESTRUCTURA DE LOS DATOS
 
-Tenés ${results.length} conversaciones de WhatsApp. Cada fila tiene un campo **text** que es un array JSON con todos los mensajes de esa conversación:
+Tenés ${parsedResults.length} conversaciones de WhatsApp. Cada fila tiene un campo **text** que es un array JSON con todos los mensajes de esa conversación:
 [{"created_at": "...", "sender": "...", "text": "..."}]
 
 **Clasificación de senders:**
@@ -253,8 +259,8 @@ Tenés ${results.length} conversaciones de WhatsApp. Cada fila tiene un campo **
 ${tableDoc ? `DOCUMENTACIÓN:\n${tableDoc}\n` : ''}
 ${basePrompt ? `INSTRUCCIONES ADICIONALES:\n${basePrompt}\n` : ''}
 
-CONVERSACIONES (${results.length} filas):
-${JSON.stringify(results.slice(0, 100))}
+CONVERSACIONES (${parsedResults.length} filas):
+${JSON.stringify(parsedResults.slice(0, 100))}
 
 ---
 
