@@ -2,6 +2,25 @@
 
 ---
 
+## Sesión 7 — 2026-03-20 (continuación) — Fixes inbound
+
+### Fixes post-implementación inbound
+
+#### Backend (`backend/config/tables.js`)
+- Corregido `dateColumn` de la tabla inbound: era `'date'` (incorrecto), ahora es `'created_at'`
+- Esto causaba que el selector de empresas en Settings no devolviera resultados para inbound
+
+#### Frontend (`frontend/src/pages/Settings.jsx`)
+- Agregado `SYSTEM_PROMPT_INBOUND` — muestra "Eres una analista de conversaciones experta en flujos conversacionales"
+- El bloque "Prompt del sistema" (solo lectura) ahora muestra el prompt correcto según la tabla activa:
+  - Outbound → prompt de analista de marketing (sin cambios)
+  - Inbound → prompt de analista de conversaciones
+
+#### Backend (`backend/services/gemini.js`)
+- Revertida la identidad de `summarizeInbound` al texto completo original (había sido simplificada por error)
+
+---
+
 ## Sesión 7 — 2026-03-20 — Modo Inbound: Análisis de Conversaciones
 
 ### Flujo diferenciado por tipo de análisis
