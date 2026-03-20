@@ -9,9 +9,8 @@ const TABLES = [
   {
     id: 'first_30_messages_last_30_days',
     label: 'Análisis Conversaciones Inbound',
-    // TODO: configurar dateColumn y companyColumn correctos para esta tabla en sesión futura
     fullName: 'atom-ai-labs-ad1fa.conversational_ai_lab.first_30_messages_last_30_days',
-    dateColumn: 'date',
+    dateColumn: 'created_at',
     companyColumn: 'company_name'
   }
 ];
