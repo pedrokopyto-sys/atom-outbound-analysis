@@ -95,33 +95,19 @@ async function getTableDescription(fullTableName) {
   try {
     const parts = fullTableName.replace(/`/g, '').split('.');
     if (parts.length !== 3) return { description: '', columns: [] };
-    const [project, dataset, table] = parts;
+    const [, dataset, table] = parts;
     const bq = getBQClient();
 
     const [metadata] = await bq.dataset(dataset).table(table).getMetadata();
     const description = metadata.description || '';
 
-    const sql = `
-      SELECT column_name, data_type, description
-      FROM \`${project}.${dataset}.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS\`
-      WHERE table_name = '${table}'
-      ORDER BY ordinal_position
-    `;
-    let columns = [];
-    try {
-      const [rows] = await bq.query({ query: sql, useLegacySql: false });
-      columns = rows.map(r => ({ name: r.column_name, type: r.data_type, description: r.description || '' }));
-    } catch {
-      // fallback: sin descripción por columna
-      const sqlBasic = `
-        SELECT column_name, data_type
-        FROM \`${project}.${dataset}.INFORMATION_SCHEMA.COLUMNS\`
-        WHERE table_name = '${table}'
-        ORDER BY ordinal_position
-      `;
-      const [rows] = await bq.query({ query: sqlBasic, useLegacySql: false });
-      columns = rows.map(r => ({ name: r.column_name, type: r.data_type, description: '' }));
-    }
+    // Las descripciones de columnas están en metadata.schema.fields, no en INFORMATION_SCHEMA
+    const fields = metadata.schema?.fields || [];
+    const columns = fields.map(f => ({
+      name:        f.name,
+      type:        f.type,
+      description: f.description || ''
+    }));
 
     return { description, columns };
   } catch (err) {
