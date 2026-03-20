@@ -186,7 +186,7 @@ export default function Home() {
               </button>
             </div>
 
-            <SuggestedActions onSelect={handleSend} />
+            <SuggestedActions onSelect={handleSend} tableId={filters.tableId} />
           </div>
         ) : (
           <div className="w-full space-y-4 pb-2">

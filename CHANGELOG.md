@@ -2,6 +2,50 @@
 
 ---
 
+## Sesión 7 — 2026-03-20 — Modo Inbound: Análisis de Conversaciones
+
+### Flujo diferenciado por tipo de análisis
+
+#### Backend (`backend/services/gemini.js`)
+- `buildInboundQuery({ days, company, limit })` — query SQL fija para inbound; filtra por `DATE(created_at)` y `company_name`, sin variación dinámica
+- `summarizeInbound({ question, results, tableDoc, basePrompt })` — prompt de "analista de conversaciones" con:
+  - Clasificación de senders: `CLIENT` = cliente, `USER` = agente humano, cualquier otro valor (ATOM, flow_builder, etc.) = bot
+  - Campo `text` parseado como JSON array `[{created_at, sender, text}]`
+  - 3 secciones fijas: 💬 Respuesta · 🔍 Análisis y Oportunidades · 🤖 Desempeño del Bot
+  - Cita mensajes reales de clientes como evidencia
+  - Cuantifica patrones (ej: "8 de 10 conversaciones mencionan X")
+  - Sección de bot siempre presente; identifica fricciones y sugiere mejoras de mensajes
+
+#### Backend (`backend/routes/chat.js`)
+- Detecta modo inbound por nombre de tabla (`first_30_messages_last_30_days`)
+- Si inbound: ejecuta `buildInboundQuery` directo → `summarizeInbound` (sin pasar por `generateSQL`)
+- Si outbound: flujo anterior sin cambios
+
+#### Frontend (`frontend/src/components/SuggestedActions.jsx`)
+- Recibe prop `tableId`
+- Outbound: sugerencias actuales (campañas, templates, fallos)
+- Inbound: 3 sugerencias específicas:
+  - ❓ Principales preguntas de los clientes
+  - 🤖 Fricciones más grandes con el bot
+  - 👤 Oportunidades de mejora para los asesores humanos
+
+#### Frontend (`frontend/src/pages/Home.jsx`)
+- Pasa `filters.tableId` a `<SuggestedActions>`
+
+### Estructura del campo `text` en inbound (documentado)
+```json
+[
+  {"created_at": "2026-02-18T20:24:02", "sender": "ATOM",   "text": "Hola! ..."},
+  {"created_at": "2026-02-19T18:44:36", "sender": "CLIENT", "text": "Estoy realizando el pago"},
+  {"created_at": "2026-02-19T19:31:18", "sender": "USER",   "text": "hola se ingresa su pago"}
+]
+```
+- `CLIENT` → cliente/prospecto
+- `USER` → agente humano
+- Todo lo demás (ATOM, flow_builder, etc.) → bot
+
+---
+
 ## Sesión 6 — 2026-03-19 (continuación 3) — Settings redesign
 
 ### Rediseño de sección Configuración en Settings

@@ -1,13 +1,23 @@
-const SUGGESTIONS = [
+const SUGGESTIONS_OUTBOUND = [
   { emoji: '🏆', label: '¿Cuáles son las campañas con mejor rendimiento?' },
   { emoji: '✍️', label: '¿Cómo están los textos de los templates? ¿Cuáles convierten mejor?' },
   { emoji: '❌', label: '¿Qué campañas tienen mayor tasa de fallos o errores de entrega?' },
 ]
 
-export default function SuggestedActions({ onSelect }) {
+const SUGGESTIONS_INBOUND = [
+  { emoji: '❓', label: '¿Cuáles son las principales preguntas de los clientes?' },
+  { emoji: '🤖', label: '¿Cuáles son las fricciones más grandes con el bot?' },
+  { emoji: '👤', label: '¿Cuáles son las oportunidades de mejora para los asesores humanos?' },
+]
+
+export default function SuggestedActions({ onSelect, tableId }) {
+  const suggestions = tableId === 'first_30_messages_last_30_days'
+    ? SUGGESTIONS_INBOUND
+    : SUGGESTIONS_OUTBOUND
+
   return (
     <div className="flex flex-wrap justify-center gap-2 mt-6">
-      {SUGGESTIONS.map(({ emoji, label }, i) => (
+      {suggestions.map(({ emoji, label }, i) => (
         <button
           key={i}
           onClick={() => onSelect(label)}
