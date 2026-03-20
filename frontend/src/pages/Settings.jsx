@@ -1,7 +1,35 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Play, CheckCircle, XCircle, Pencil, X, Settings2, Plug } from 'lucide-react'
-import { loadConfig, saveConfig, testBQ, getCompanies, clearSchemaCache } from '../api'
+import { ArrowLeft, Save, Play, CheckCircle, XCircle, Pencil, X, Settings2, Plug, ChevronDown, ChevronUp, Lock } from 'lucide-react'
+import { loadConfig, saveConfig, testBQ, getCompanies, clearSchemaCache, getTableDescription } from '../api'
+
+const SYSTEM_PROMPT = `IDENTIDAD: Analista de marketing + especialista en copywriting para campañas de WhatsApp.
+
+FLUJO OBLIGATORIO:
+1. Genera y ejecuta query SQL con los datos necesarios
+2. Filtra campañas con volumen < 5% del máximo del resultado
+3. Limita análisis a Top 5 campañas más relevantes
+4. Responde siempre con las 3 secciones fijas
+
+SECCIÓN 1 — 📊 Respuesta
+Tabla Markdown Top 5 ordenada por métrica principal + oración introductoria.
+Columnas: Nombre de campaña, Tipo, Categoría, Envíos, Fallidos, Ventas, Tasa de conversión.
+
+SECCIÓN 2 — 🔍 Recomendaciones y Análisis
+Patrones, anomalías y oportunidades. Mínimo 2 observaciones accionables con datos concretos.
+
+SECCIÓN 3 — ✍️ Análisis de Templates
+Siempre presente. Analiza el campo template_text (copy del mensaje) del template con mayor
+oportunidad de mejora. Propone versión mejorada. Cierra con 2–3 principios observados.
+
+CAMPOS CLAVE (nombres exactos):
+  campaign_name · category · type_campaign · template_text
+
+REGLAS:
+- Español siempre
+- ORDER BY volumen DESC obligatorio
+- Denominador siempre incluido en tasas (ej: "10% sobre 500 envíos")
+- Nunca comparar entre empresas`
 
 function EditModal({ title, description, value, onChange, onClose, onSave, saving, placeholder, mono }) {
   return (
@@ -53,6 +81,9 @@ export default function Settings() {
   const [tables, setTables] = useState([])
   const [saved, setSaved] = useState(false)
   const [editModal, setEditModal] = useState(null)
+  const [promptExpanded, setPromptExpanded] = useState(false)
+  const [tableDescription, setTableDescription] = useState('')
+  const [loadingDesc, setLoadingDesc] = useState(false)
 
   const [testTableId, setTestTableId] = useState('')
   const [testDays, setTestDays] = useState(parseInt(localStorage.getItem('atom_days') || '7'))
@@ -80,15 +111,18 @@ export default function Settings() {
 
   useEffect(() => {
     if (!testTableId) return
-    // cargar config específica de la tabla seleccionada
     setTableDoc(localStorage.getItem(`atom_table_doc_${testTableId}`) || '')
     setBasePrompt(localStorage.getItem(`atom_base_prompt_${testTableId}`) || '')
-    // cargar empresas de la tabla seleccionada
     setLoadingCo(true)
     getCompanies(testTableId)
       .then(list => setCompanies(list))
       .catch(() => setCompanies([]))
       .finally(() => setLoadingCo(false))
+    setLoadingDesc(true)
+    getTableDescription(testTableId)
+      .then(desc => setTableDescription(desc))
+      .catch(() => setTableDescription(''))
+      .finally(() => setLoadingDesc(false))
   }, [testTableId])
 
   const handleSaveFromModal = async () => {
@@ -123,8 +157,6 @@ export default function Settings() {
     }
   }
 
-  const docPreview = tableDoc ? tableDoc.slice(0, 120) + (tableDoc.length > 120 ? '…' : '') : null
-  const promptPreview = basePrompt ? basePrompt.slice(0, 120) + (basePrompt.length > 120 ? '…' : '') : null
 
   return (
     <div className="min-h-screen bg-[#fdf7f0]">
@@ -149,34 +181,39 @@ export default function Settings() {
           <h2 className="text-sm font-bold text-accent mb-5 flex items-center gap-1.5"><Settings2 size={14} /> Configuración</h2>
 
           <div className="space-y-4">
+
+            {/* Prompt quemado — solo lectura */}
             <div className="rounded-xl border border-orange-100 bg-white p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Documentación de tablas</p>
-                  <p className="text-xs text-gray-400 mt-0.5 mb-2">Describí los campos y su significado. Se inyecta en cada llamada a la IA.</p>
-                  {docPreview
-                    ? <p className="text-xs text-gray-500 font-mono bg-orange-50 rounded-xl px-3 py-2 truncate">{docPreview}</p>
-                    : <p className="text-xs text-gray-400 italic">Sin documentación cargada</p>
-                  }
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Lock size={12} className="text-accent" />
+                  <p className="text-sm font-semibold text-gray-800">Prompt del sistema</p>
                 </div>
                 <button
-                  onClick={() => setEditModal('tableDoc')}
-                  className="flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-xl bg-accent hover:bg-accent-dark text-white text-xs font-semibold transition-colors"
+                  onClick={() => setPromptExpanded(v => !v)}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-accent transition-colors"
                 >
-                  <Pencil size={12} />
-                  Editar
+                  {promptExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  {promptExpanded ? 'Ocultar' : 'Ver'}
                 </button>
               </div>
+              <p className="text-xs text-gray-400 mb-2">Configurado internamente. No editable.</p>
+              {promptExpanded && (
+                <pre className="text-xs text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-3 whitespace-pre-wrap leading-relaxed font-mono">
+                  {SYSTEM_PROMPT}
+                </pre>
+              )}
             </div>
 
+            {/* Instrucciones adicionales — editable */}
             <div className="rounded-xl border border-orange-100 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Prompt base del sistema</p>
-                  <p className="text-xs text-gray-400 mt-0.5 mb-2">Define el tono y comportamiento de la IA.</p>
-                  {promptPreview
-                    ? <p className="text-xs text-gray-500 bg-orange-50 rounded-xl px-3 py-2 truncate">{promptPreview}</p>
-                    : <p className="text-xs text-gray-400 italic">Sin prompt configurado</p>
+                  <p className="text-sm font-semibold text-gray-800">Instrucciones adicionales</p>
+                  <p className="text-xs text-gray-400 mt-0.5 mb-2">Contexto extra que se suma al prompt del sistema.</p>
+                  {basePrompt
+                    ? <p className="text-xs text-gray-500 bg-orange-50 rounded-xl px-3 py-2 truncate">{basePrompt.slice(0, 120)}{basePrompt.length > 120 ? '…' : ''}</p>
+                    : <p className="text-xs text-gray-400 italic">Sin instrucciones adicionales</p>
                   }
                 </div>
                 <button
@@ -188,6 +225,22 @@ export default function Settings() {
                 </button>
               </div>
             </div>
+
+            {/* Documentación de tabla — desde BQ, solo lectura */}
+            <div className="rounded-xl border border-orange-100 bg-white p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock size={12} className="text-accent" />
+                <p className="text-sm font-semibold text-gray-800">Documentación de tabla</p>
+              </div>
+              <p className="text-xs text-gray-400 mb-2">Descripción oficial cargada desde BigQuery.</p>
+              {loadingDesc
+                ? <p className="text-xs text-gray-400 italic">Cargando…</p>
+                : tableDescription
+                  ? <p className="text-xs text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2 leading-relaxed">{tableDescription}</p>
+                  : <p className="text-xs text-gray-400 italic">Sin descripción configurada en BigQuery para esta tabla.</p>
+              }
+            </div>
+
           </div>
         </div>
 
@@ -305,29 +358,16 @@ export default function Settings() {
         </div>
       </div>
 
-      {editModal === 'tableDoc' && (
-        <EditModal
-          title="Documentación de tablas"
-          description="Describí los campos y su significado. Se inyecta en cada llamada a la IA."
-          value={tableDoc}
-          onChange={setTableDoc}
-          onClose={() => setEditModal(null)}
-          onSave={handleSaveFromModal}
-          saving={saved}
-          placeholder={`Tabla: outbound_analysis\nCampos:\n- company_name: nombre de la empresa\n- campaign_name: nombre de la campaña\n...`}
-          mono
-        />
-      )}
       {editModal === 'basePrompt' && (
         <EditModal
-          title="Prompt base del sistema"
-          description="Define el tono y comportamiento de la IA."
+          title="Instrucciones adicionales"
+          description="Contexto extra que se suma al prompt del sistema."
           value={basePrompt}
           onChange={setBasePrompt}
           onClose={() => setEditModal(null)}
           onSave={handleSaveFromModal}
           saving={saved}
-          placeholder="Sos un analista experto en campañas de WhatsApp..."
+          placeholder="Ej: Siempre mencionar el nombre del asesor asignado cuando esté disponible..."
         />
       )}
     </div>

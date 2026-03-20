@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { runQuery, validateSQL, clearSchemaCache } = require('../services/bigquery');
+const { runQuery, validateSQL, clearSchemaCache, getTableDescription } = require('../services/bigquery');
 const TABLES = require('../config/tables');
 
 router.post('/test', async (req, res) => {
@@ -58,6 +58,17 @@ router.get('/companies', async (req, res) => {
     `;
     const rows = await runQuery(sql);
     res.json(rows.map(r => r.company_name));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/description', async (req, res) => {
+  try {
+    const { tableId } = req.query;
+    const table = TABLES.find(t => t.id === tableId) || TABLES[0];
+    const description = await getTableDescription(table.fullName);
+    res.json({ description });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

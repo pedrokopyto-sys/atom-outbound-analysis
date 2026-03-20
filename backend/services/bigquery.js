@@ -91,10 +91,24 @@ async function getTableSchema(fullTableName) {
   }
 }
 
+async function getTableDescription(fullTableName) {
+  try {
+    const parts = fullTableName.replace(/`/g, '').split('.');
+    if (parts.length !== 3) return '';
+    const [, dataset, table] = parts;
+    const bq = getBQClient();
+    const [metadata] = await bq.dataset(dataset).table(table).getMetadata();
+    return metadata.description || '';
+  } catch (err) {
+    console.warn('Could not fetch table description:', err.message);
+    return '';
+  }
+}
+
 function clearSchemaCache(fullTableName) {
   const cacheKey = `schema:${fullTableName}`;
   delete schemaCache[fullTableName];
   setConfig(cacheKey, null);
 }
 
-module.exports = { runQuery, validateSQL, getTableSchema, clearSchemaCache };
+module.exports = { runQuery, validateSQL, getTableSchema, clearSchemaCache, getTableDescription };
