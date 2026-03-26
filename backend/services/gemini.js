@@ -243,6 +243,11 @@ function formatConversations(rows) {
     let messages = [];
     try { messages = JSON.parse(row.text); } catch (e) { messages = []; }
 
+    const clientMessages = messages
+      .filter(m => m.sender === 'CLIENT' && m.text)
+      .map(m => `"${m.text.trim()}"`)
+      .join(' | ');
+
     const formattedMessages = messages
       .map(m => {
         const date = m.created_at?.slice(0, 16).replace('T', ' ') ?? '';
@@ -254,7 +259,8 @@ function formatConversations(rows) {
 CONVERSACION lead_id: ${row.lead_id}
 Empresa: ${row.company_name} | Asesor: ${row.user_name ?? 'N/A'} | Grupo: ${row.group_name ?? 'N/A'}
 Asignado: ${row.asigned} | Tipificación: ${row.last_typification ?? 'Sin tipificación'} | Etapa: ${row.max_lead_stage ?? 'N/A'}
-Mensajes:
+Mensajes del cliente: ${clientMessages || '(sin mensajes de texto del cliente)'}
+Conversación completa:
 ${formattedMessages}
 ---`;
   }).join('\n\n');
