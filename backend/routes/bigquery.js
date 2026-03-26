@@ -63,6 +63,28 @@ router.get('/companies', async (req, res) => {
   }
 });
 
+router.get('/flows', async (req, res) => {
+  try {
+    const { tableId, days = 30, company } = req.query;
+    const table = TABLES.find(t => t.id === tableId) || TABLES[0];
+    let sql = `
+      SELECT flow_name, COUNT(DISTINCT lead_id) AS total
+      FROM \`${table.fullName}\`
+      WHERE DATE(${table.dateColumn}) >= DATE_SUB(CURRENT_DATE(), INTERVAL ${parseInt(days)} DAY)
+        AND direction = 'inbound'
+        AND flow_name IS NOT NULL
+        AND TRIM(flow_name) != ''`;
+    if (company && company.trim()) {
+      sql += `\n        AND ${table.companyColumn} = '${company.replace(/'/g, "\\'")}'`;
+    }
+    sql += `\n      GROUP BY 1 ORDER BY 2 DESC`;
+    const rows = await runQuery(sql);
+    res.json(rows.map(r => ({ flow_name: r.flow_name, total: Number(r.total) })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/description', async (req, res) => {
   try {
     const { tableId } = req.query;

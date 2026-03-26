@@ -7,7 +7,7 @@ import SuggestedActions from '../components/SuggestedActions'
 import ResponseCard from '../components/ResponseCard'
 import LoadingCard from '../components/LoadingCard'
 import FieldsModal from '../components/FieldsModal'
-import { loadConfig, sendChat, getHistory, clearHistory } from '../api'
+import { loadConfig, sendChat, getHistory, clearHistory, getFlows } from '../api'
 
 const PHRASES = [
   { emoji: '📊', text: 'Entendé tus campañas.' },
@@ -30,11 +30,13 @@ export default function Home() {
   }
   const [config, setConfig] = useState(DEFAULT_CONFIG)
   const [filters, setFilters] = useState({
-    tableId: localStorage.getItem('atom_table_id') || 'outbound_analysis',
-    days:    parseInt(localStorage.getItem('atom_days')    || '7'),
-    company: localStorage.getItem('atom_company') || '',
-    limit:   parseInt(localStorage.getItem('atom_limit')   || '100')
+    tableId:  localStorage.getItem('atom_table_id') || 'outbound_analysis',
+    days:     parseInt(localStorage.getItem('atom_days')    || '7'),
+    company:  localStorage.getItem('atom_company') || '',
+    limit:    parseInt(localStorage.getItem('atom_limit')   || '100'),
+    flowName: null
   })
+  const [flows, setFlows] = useState([])
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [phraseIdx, setPhraseIdx] = useState(0)
@@ -58,6 +60,15 @@ export default function Home() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const isInbound = filters.tableId === 'first_30_messages_last_30_days'
+
+  useEffect(() => {
+    if (!isInbound || !filters.company) { setFlows([]); return }
+    getFlows(filters.tableId, filters.days, filters.company)
+      .then(list => setFlows(list))
+      .catch(() => setFlows([]))
+  }, [isInbound, filters.tableId, filters.days, filters.company])
 
   const getActiveTableName = () =>
     config?.tables?.find(t => t.id === filters.tableId)?.fullName || ''
@@ -86,7 +97,7 @@ export default function Home() {
     try {
       const result = await sendChat({
         question,
-        filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit },
+        filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit, flowName: filters.flowName },
         previousResult: getLastResult(),
         ...getClientConfig()
       })
@@ -108,7 +119,7 @@ export default function Home() {
     try {
       const result = await sendChat({
         question,
-        filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit },
+        filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit, flowName: filters.flowName },
         previousResult: [],
         ...getClientConfig()
       })
@@ -149,7 +160,7 @@ export default function Home() {
 
       {/* Active filters bar */}
       {filters.company ? (
-        <div className="px-6 py-2 border-b border-orange-100 bg-white/60 flex items-center gap-3 text-xs text-gray-500">
+        <div className="px-6 py-2 border-b border-orange-100 bg-white/60 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
           <span className="font-semibold text-gray-700">{getActiveTableLabel()}</span>
           <span>·</span>
           <span className="font-bold text-accent">{filters.company}</span>
@@ -157,6 +168,24 @@ export default function Home() {
           <span>Últimos {filters.days} días</span>
           <span>·</span>
           <span>{filters.limit} registros</span>
+          {isInbound && flows.length > 0 && (
+            <>
+              <span>·</span>
+              <select
+                value={filters.flowName || ''}
+                onChange={e => setFilters(f => ({ ...f, flowName: e.target.value || null }))}
+                className="bg-white border border-orange-200 text-xs text-gray-700 rounded-lg px-2 py-1 focus:outline-none focus:border-accent cursor-pointer font-semibold appearance-none pr-5"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center' }}
+              >
+                <option value="">Todos los flujos</option>
+                {flows.map(f => (
+                  <option key={f.flow_name} value={f.flow_name}>
+                    {f.flow_name} ({f.total})
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <a href="/settings" className="ml-auto text-gray-400 hover:text-accent transition-colors">Cambiar</a>
         </div>
       ) : (

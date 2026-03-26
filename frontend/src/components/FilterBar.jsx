@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
-import { getCompanies } from '../api'
+import { getCompanies, getFlows } from '../api'
 import { AlertCircle } from 'lucide-react'
 
 const DAY_OPTIONS   = [7, 15, 30]
 const LIMIT_OPTIONS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
+const INBOUND_TABLE_ID = 'first_30_messages_last_30_days'
+
 export default function FilterBar({ filters, onChange, tables }) {
   const [companies, setCompanies] = useState([])
   const [loadingCo, setLoadingCo] = useState(false)
+  const [flows, setFlows] = useState([])
+  const [loadingFlows, setLoadingFlows] = useState(false)
+
+  const isInbound = filters.tableId === INBOUND_TABLE_ID
 
   useEffect(() => {
     if (!filters.tableId) return
@@ -22,6 +28,15 @@ export default function FilterBar({ filters, onChange, tables }) {
       .catch(() => setCompanies([]))
       .finally(() => setLoadingCo(false))
   }, [filters.tableId])
+
+  useEffect(() => {
+    if (!isInbound || !filters.company) return
+    setLoadingFlows(true)
+    getFlows(filters.tableId, filters.days, filters.company)
+      .then(list => setFlows(list))
+      .catch(() => setFlows([]))
+      .finally(() => setLoadingFlows(false))
+  }, [isInbound, filters.tableId, filters.days, filters.company])
 
   const selectCls = `
     bg-white border border-orange-200 text-sm text-gray-800
@@ -81,6 +96,31 @@ export default function FilterBar({ filters, onChange, tables }) {
             <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-gray-400">▾</div>
           </div>
         </div>
+
+        {isInbound && (
+          <div className={wrapCls}>
+            <span className={labelCls}>Flujo</span>
+            <div className="relative">
+              <select
+                value={filters.flowName || ''}
+                onChange={e => onChange({ ...filters, flowName: e.target.value || null })}
+                className={selectCls}
+                disabled={loadingFlows || !filters.company}
+              >
+                <option value="">Todos los flujos</option>
+                {loadingFlows
+                  ? <option disabled>Cargando flujos...</option>
+                  : flows.map(f => (
+                      <option key={f.flow_name} value={f.flow_name}>
+                        {f.flow_name} ({f.total})
+                      </option>
+                    ))
+                }
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-gray-400">▾</div>
+            </div>
+          </div>
+        )}
 
         <div className={wrapCls}>
           <span className={labelCls}>Límite</span>

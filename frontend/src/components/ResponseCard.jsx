@@ -7,7 +7,7 @@ import DataTable from './DataTable'
 import SqlModal from './SqlModal'
 
 export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
-  const { respuesta = '', followups = [], results, sql, action } = data
+  const { respuesta = '', followups = [], results, sql, action, recordsAnalyzed } = data
   const [showSQL, setShowSQL] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showTable, setShowTable] = useState(false)
@@ -68,30 +68,13 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
         </div>
       )}
 
-      {/* ── 4. Ver tabla de datos ── */}
-      {results?.length > 0 && (
+      {/* ── 4. Tabla de datos (toggle desde barra de acciones) ── */}
+      {showTable && results?.length > 0 && (
         <div>
-          {!showTable ? (
-            <button
-              onClick={() => setShowTable(true)}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-dashed border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-accent text-accent font-bold text-sm transition-all group"
-            >
-              <TableProperties size={18} className="group-hover:scale-110 transition-transform" />
-              Ver tabla de datos ({results.length} registros)
-            </button>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
-                  <TableProperties size={12} /> Tabla de datos
-                </p>
-                <button onClick={() => setShowTable(false)} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                  Ocultar
-                </button>
-              </div>
-              <DataTable rows={results} />
-            </div>
-          )}
+          <p className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-2">
+            <TableProperties size={12} /> Tabla de datos
+          </p>
+          <DataTable rows={results} />
         </div>
       )}
 
@@ -107,6 +90,15 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
           </button>
         )}
         {results?.length > 0 && (
+          <button
+            onClick={() => setShowTable(v => !v)}
+            className={ghostBtn}
+          >
+            <TableProperties size={12} />
+            {showTable ? 'Ocultar tabla' : `Ver tabla (${results.length})`}
+          </button>
+        )}
+        {results?.length > 0 && (
           <button onClick={handleExportCSV} className={ghostBtn}>
             <Download size={12} />Exportar CSV
           </button>
@@ -118,6 +110,9 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
           {copied ? <Check size={12} /> : <Copy size={12} />}
           {copied ? 'Copiado' : 'Copiar análisis'}
         </button>
+        {recordsAnalyzed != null && (
+          <span className="ml-auto text-xs text-gray-400 italic">{recordsAnalyzed} conversaciones analizadas</span>
+        )}
         {action === 'compute_from_data' && (
           <span className="ml-auto text-xs text-gray-400 italic">calculado desde datos previos</span>
         )}

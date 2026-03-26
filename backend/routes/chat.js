@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
 
     if (isInbound) {
       // Inbound: fixed query, no dynamic SQL generation
-      sql = buildInboundQuery({ days: filters.days, company: filters.company, limit: filters.limit });
+      sql = buildInboundQuery({ days: filters.days, company: filters.company, limit: filters.limit, flowName: filters.flowName });
       results = await runQuery(sql);
       analysis = await summarizeInbound({ question, results, tableDoc, basePrompt });
     } else {
@@ -54,7 +54,8 @@ router.post('/', async (req, res) => {
     res.json({
       action, sql, results,
       respuesta: analysis.respuesta || '',
-      followups: analysis.followups || []
+      followups: analysis.followups || [],
+      recordsAnalyzed: results.length
     });
   } catch (err) {
     console.error('Chat error:', err);

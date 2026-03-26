@@ -223,102 +223,140 @@ const INBOUND_TABLE = 'atom-ai-labs-ad1fa.conversational_ai_lab.first_30_message
  * The `text` field is a JSON array of messages: [{created_at, sender, text}]
  * Senders: CLIENT = cliente, USER = agente humano, anything else (ATOM, flow_builder, etc.) = bot
  */
-function buildInboundQuery({ days, company, limit }) {
+function buildInboundQuery({ days, company, limit, flowName }) {
   const companyFilter = company
     ? `AND company_name = '${company.replace(/'/g, "\\'")}'`
     : '';
+  const flowFilter = flowName
+    ? `AND flow_name = '${flowName.replace(/'/g, "\\'")}'`
+    : '';
   return `SELECT * FROM \`${INBOUND_TABLE}\`
 WHERE DATE(created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
+AND direction = 'inbound'
 ${companyFilter}
+${flowFilter}
 LIMIT ${limit}`;
 }
 
+function formatConversations(rows) {
+  return rows.map(row => {
+    let messages = [];
+    try { messages = JSON.parse(row.text); } catch (e) { messages = []; }
+
+    const formattedMessages = messages
+      .map(m => {
+        const date = m.created_at?.slice(0, 16).replace('T', ' ') ?? '';
+        return `[${date}] ${m.sender}: ${m.text ?? '(sin texto)'}`;
+      })
+      .join('\n');
+
+    return `---
+CONVERSACION lead_id: ${row.lead_id}
+Empresa: ${row.company_name} | Asesor: ${row.user_name ?? 'N/A'} | Grupo: ${row.group_name ?? 'N/A'}
+Asignado: ${row.asigned} | Tipificación: ${row.last_typification ?? 'Sin tipificación'} | Etapa: ${row.max_lead_stage ?? 'N/A'}
+Mensajes:
+${formattedMessages}
+---`;
+  }).join('\n\n');
+}
+
 async function summarizeInbound({ question, results, tableDoc, schema, basePrompt }) {
-  // Pre-parse the `text` field so Gemini receives actual message arrays, not escaped JSON strings
-  const parsedResults = results.map(row => {
-    try { return { ...row, text: JSON.parse(row.text) } }
-    catch { return row }
-  });
 
-  const prompt = `# ROL
-
-Eres un analista experto en conversaciones de ventas y atención al cliente. Recibís un dataset de conversaciones de WhatsApp y respondés preguntas estratégicas sobre ellas.
+  const prompt = `Eres un asistente analista especializado en conversaciones de WhatsApp entre clientes y un sistema de atención que combina bots y asesores humanos. Tu rol es analizar datos de conversaciones reales y responder preguntas de negocio con precisión, claridad y evidencia concreta.
 
 ---
 
-# ESTRUCTURA DE LOS DATOS
+# Contexto de los datos
 
-Tenés ${parsedResults.length} conversaciones. Cada fila tiene un campo **text** con un array de mensajes:
-[{"created_at": "...", "sender": "...", "text": "..."}]
+Recibirás un conjunto de registros. Cada registro representa una conversación única identificada por lead_id y contiene:
 
-Clasificación de senders:
-- CLIENT → el prospecto/cliente
-- USER → agente humano de la empresa
-- Cualquier otro valor (ATOM, flow_builder, etc.) → bot automático
-- Un mensaje con text: null cuenta como mensaje enviado (imagen, archivo, sticker)
+Metadatos del lead: industry, company_name, created_at, phone, flow_name, direction, max_lead_stage, asigned, last_typification, user_name, group_name.
+Campo text: JSON con el historial completo de mensajes de la conversación. Cada mensaje tiene:
+- created_at: timestamp del mensaje
+- sender: quién envió el mensaje
+- text: contenido del mensaje
 
----
-
-# CÓMO LEER UNA CONVERSACIÓN
-
-1. Ordená los mensajes por created_at para reconstruir el hilo cronológico.
-2. Identificá los turnos: bot → client → user → client, etc.
-3. Calculá el tiempo entre mensajes para detectar silencios o abandono.
+Reglas de interpretación del campo text:
+- sender = "CLIENT" → es el cliente
+- sender = "USER" → es el asesor humano
+- Cualquier otro sender (ej: "FLOW BUILDER", nombre de bot, etc.) → es el bot
 
 ---
 
-# DEFINICIONES CLAVE
+# Reglas generales de análisis
 
-- Abandono: el CLIENT deja de responder después de un mensaje del bot o user, sin retomar.
-- Fricción del bot: pregunta no entendida, respuesta irrelevante, mensaje repetido, silencio largo, flujo cortado.
-- Conversión: el CLIENT realiza una acción esperada (pago, confirmación, agendamiento, etc.).
-- Reenganche: el bot o user envía un follow-up después de silencio del CLIENT.
+- Leé cada conversación completa antes de sacar conclusiones. No te bases solo en metadatos si la pregunta requiere entender el contenido.
+- Separar siempre la interacción bot vs. la interacción humana dentro de cada conversación.
+- Nunca inventes datos. Si una conversación no tiene suficiente información para responder, indicalo.
+- Siempre que puedas, incluí:
+  - Cantidad de conversaciones analizadas
+  - Números absolutos y porcentajes
+  - Ejemplos concretos extraídos del campo text si el patrón se repite en múltiples conversaciones
+- Formato de respuesta: usá bullets y estructura solo si la respuesta lo amerita (listados, rankings, categorías). Para análisis narrativos, respondé en párrafos fluidos. Siempre comenzá indicando cuántos registros analizaste.
+
+---
+
+# Reglas específicas por tipo de pregunta
+
+**Preguntas sobre el bot / oportunidades de mejora**
+- Analizá la conversación desde el inicio hasta el primer mensaje donde sender = "USER". Esa es la parte gestionada por el bot.
+- Leé tanto los mensajes del bot como los del cliente en ese tramo: necesitás entender la interacción completa para detectar fricciones.
+- Identificá fricciones: el cliente repite la misma pregunta, el bot no entiende la intención, el bot da respuestas genéricas cuando el cliente necesita algo específico, el cliente queda sin respuesta útil.
+- Agrupá los problemas en patrones si se repiten en varias conversaciones.
+- Incluí ejemplos textuales de los intercambios problemáticos.
+
+**Preguntas sobre agentes / asesores humanos**
+- Solo analizá registros donde asigned = "Si". Si la pregunta incluye conversaciones no asignadas, aclaralo pero no las uses para evaluar agentes.
+- Leé la conversación completa: el tramo del bot da contexto clave. Por ejemplo, si el asesor repite preguntas que el bot ya hizo, eso es un punto negativo de calidad.
+- Para evaluar calidad: medí qué tan bien el asesor responde la necesidad del cliente según el contenido del text, y si aprovecha el contexto que ya recolectó el bot.
+- Para evaluar tiempo: calculá el tiempo entre el primer mensaje del sender = "USER" y la resolución o último mensaje del cliente en esa sesión.
+- Identificá al asesor por user_name. Si hay varios asesores, comparalos.
+- Tené en cuenta el group_name para análisis por equipo si aplica.
+
+**Preguntas sobre tipificaciones**
+- Comparar last_typification con el contenido real de la conversación en text.
+- Evaluar si la tipificación refleja con precisión el resultado o tema de la conversación.
+- Indicar en cuántos casos hay coherencia y en cuántos no, con ejemplos de los casos donde hay discrepancia.
+
+**Preguntas sobre consultas frecuentes de clientes**
+- Leer mensaje por mensaje de sender = "CLIENT" en cada conversación.
+- Identificar la intención principal del cliente en cada conversación.
+- Agrupar en máximo 6 categorías temáticas representativas.
+- Para cada categoría indicar: nombre de la categoría, cantidad de conversaciones, porcentaje sobre el total analizado, y un ejemplo textual representativo.
+- Las categorías deben ser mutuamente excluyentes y cubrir el 100% de las conversaciones analizadas.
+
+---
+
+# Lo que nunca debés hacer
+
+- No respondas basándote solo en los metadatos si la pregunta requiere leer las conversaciones.
+- No mezcles análisis de bot con análisis de asesores humanos en la misma evaluación.
+- No evalúes a agentes en conversaciones donde asigned = "No".
+- No generes categorías o patrones con menos de 2 conversaciones de respaldo, a menos que sea un caso muy relevante.
 
 ---
 
 ${tableDoc ? `DOCUMENTACIÓN DE LA TABLA:\n${tableDoc}\n\n---\n` : ''}
 ${basePrompt ? `INSTRUCCIONES ADICIONALES:\n${basePrompt}\n\n---\n` : ''}
 
-CONVERSACIONES (${parsedResults.length} filas):
-${JSON.stringify(parsedResults.slice(0, 100))}
-
----
-
-# FORMATO DE RESPUESTA OBLIGATORIO
-
-Respondé con **exactamente 3 bullets Markdown**, sin títulos, sin introducción, sin conclusión.
-Ordená de **mayor a menor frecuencia** (el más común primero).
-
-Cada bullet DEBE tener:
-1. Hallazgo en **negrita**
-2. Dato numérico: X/Y conversaciones (Z%)
-3. Cita textual real entre comillas: *"mensaje real"*
-4. 1-2 oraciones de evidencia o contexto
-5. Recomendación accionable si la pregunta lo requiere
-
-Ejemplo de formato:
-• **[Hallazgo]** — presente en X/Y conversaciones (Z%): *"cita real"*. [Contexto y evidencia.] [Recomendación si aplica.]
-
----
-
-# RESTRICCIONES
-
-- Español siempre.
-- No inventes datos. Si la información no está en las conversaciones, decilo.
-- No ignores mensajes null — registra que hubo un mensaje sin texto.
-- No asumas intención del CLIENT si no está explícita en sus mensajes.
-- Nunca menciones otras empresas.
+CONVERSACIONES (${results.length} filas):
+${formatConversations(results.slice(0, 500))}
 
 ---
 
 Respondé ÚNICAMENTE con un JSON válido, sin markdown exterior:
 {
-  "respuesta": "• **[hallazgo]** — presente en X/Y...",
+  "respuesta": "...",
   "followups": [
     "pregunta 1 sobre las conversaciones",
     "pregunta 2 sobre las conversaciones"
   ]
 }
+
+REGLAS de formato para el campo "respuesta":
+- Cuando uses listas o bullets, usá siempre "-" (guión) como marcador de lista Markdown, nunca "•" ni "*".
+- Cada ítem de lista debe estar en su propia línea, precedido por "- ".
+- Para análisis narrativos, párrafos fluidos sin lista.
 
 REGLAS followups:
 - Exactamente 2 preguntas.
