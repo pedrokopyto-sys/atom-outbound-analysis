@@ -7,7 +7,7 @@ import SuggestedActions from '../components/SuggestedActions'
 import ResponseCard from '../components/ResponseCard'
 import LoadingCard from '../components/LoadingCard'
 import FieldsModal from '../components/FieldsModal'
-import { loadConfig, sendChat, getHistory, clearHistory, getFlows } from '../api'
+import { loadConfig, sendChat, getHistory, clearHistory, getFlows, getTableDescription } from '../api'
 
 const PHRASES = [
   { emoji: '📊', text: 'Entendé tus campañas.' },
@@ -37,6 +37,7 @@ export default function Home() {
     flowName: null
   })
   const [flows, setFlows] = useState([])
+  const [tableDescription, setTableDescription] = useState({ description: '', columns: [] })
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [phraseIdx, setPhraseIdx] = useState(0)
@@ -62,6 +63,13 @@ export default function Home() {
   }, [messages])
 
   const isInbound = filters.tableId === 'first_30_messages_last_30_days'
+
+  useEffect(() => {
+    if (!filters.tableId) return
+    getTableDescription(filters.tableId)
+      .then(data => setTableDescription(data))
+      .catch(() => setTableDescription({ description: '', columns: [] }))
+  }, [filters.tableId])
 
   useEffect(() => {
     if (!isInbound || !filters.company) { setFlows([]); return }
@@ -208,10 +216,10 @@ export default function Home() {
               <ChatInput onSubmit={handleSend} disabled={loading} large />
               <button
                 onClick={() => setShowFields(true)}
-                className="absolute -bottom-7 right-0 flex items-center gap-1 text-xs text-gray-400 hover:text-accent transition-colors"
+                className="absolute -bottom-8 right-0 flex items-center gap-1.5 text-xs font-semibold text-accent border border-accent/30 bg-orange-50 hover:bg-orange-100 px-3 py-1 rounded-lg transition-colors"
               >
                 <HelpCircle size={12} />
-                ver más
+                Ver tabla
               </button>
             </div>
 
@@ -254,16 +262,16 @@ export default function Home() {
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={handleClearChat}
-              className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <Trash2 size={12} className="inline mr-1" /> Limpiar conversación
+              <Trash2 size={12} /> Limpiar conversación
             </button>
             <button
               onClick={() => setShowFields(true)}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-accent transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-accent border border-accent/30 bg-orange-50 hover:bg-orange-100 px-3 py-1 rounded-lg transition-colors"
             >
               <HelpCircle size={12} />
-              ver más
+              Ver tabla
             </button>
           </div>
           <ChatInput onSubmit={handleSend} disabled={loading} />
@@ -304,7 +312,7 @@ export default function Home() {
 
       {/* Fields modal */}
       {showFields && (
-        <FieldsModal tableDoc={config?.tableDoc || ''} onClose={() => setShowFields(false)} />
+        <FieldsModal tableDescription={tableDescription} onClose={() => setShowFields(false)} />
       )}
     </div>
   )

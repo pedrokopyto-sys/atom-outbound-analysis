@@ -1,9 +1,8 @@
 import { X, BookOpen } from 'lucide-react'
 
-export default function FieldsModal({ tableDoc, onClose }) {
-  const lines = (tableDoc || '').split('\n')
-  const tableLines = lines.filter(l => l.trim().startsWith('|'))
-  const hasMarkdownTable = tableLines.length > 2
+export default function FieldsModal({ tableDescription, onClose }) {
+  const { description = '', columns = [] } = tableDescription || {}
+  const hasData = description || columns.length > 0
 
   return (
     <div
@@ -17,7 +16,7 @@ export default function FieldsModal({ tableDoc, onClose }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <BookOpen size={15} className="text-accent" />
-            <span className="text-sm font-semibold text-gray-800">Campos disponibles</span>
+            <span className="text-sm font-semibold text-gray-800">Documentación de tabla</span>
           </div>
           <button
             onClick={onClose}
@@ -27,35 +26,42 @@ export default function FieldsModal({ tableDoc, onClose }) {
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[65vh] p-5">
-          {!tableDoc ? (
+        <div className="overflow-y-auto max-h-[65vh] p-5 space-y-4">
+          {!hasData ? (
             <p className="text-sm text-gray-400">
               No hay documentación cargada.{' '}
               <a href="/settings" className="text-accent font-semibold underline">Ir a Configuración</a> para agregar la descripción de los campos.
             </p>
-          ) : hasMarkdownTable ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <tbody>
-                  {tableLines.map((line, i) => {
-                    const cells = line.split('|').filter((_, ci) => ci > 0 && ci < line.split('|').length - 1)
-                    const isSeparator = cells.every(c => /^[-:\s]+$/.test(c))
-                    if (isSeparator) return null
-                    const isHeader = i === 0
-                    return (
-                      <tr key={i} className={`border-b border-gray-100 ${isHeader ? 'bg-orange-50' : 'hover:bg-orange-50/50'}`}>
-                        {cells.map((cell, j) => isHeader
-                          ? <th key={j} className="px-3 py-2 text-left text-xs font-bold text-accent whitespace-nowrap">{cell.trim()}</th>
-                          : <td key={j} className="px-3 py-2 text-gray-700">{cell.trim()}</td>
-                        )}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
           ) : (
-            <pre className="text-sm text-gray-600 whitespace-pre-wrap font-mono leading-relaxed">{tableDoc}</pre>
+            <>
+              {description && (
+                <p className="text-sm text-gray-600 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 leading-relaxed">
+                  {description}
+                </p>
+              )}
+              {columns.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-orange-50 border-b border-orange-100">
+                        <th className="px-3 py-2 text-left font-bold text-accent whitespace-nowrap">Campo</th>
+                        <th className="px-3 py-2 text-left font-bold text-accent whitespace-nowrap">Tipo</th>
+                        <th className="px-3 py-2 text-left font-bold text-accent">Descripción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {columns.map((col, i) => (
+                        <tr key={i} className="border-b border-gray-50 hover:bg-orange-50/40">
+                          <td className="px-3 py-2 font-mono text-gray-800 whitespace-nowrap">{col.name}</td>
+                          <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{col.type}</td>
+                          <td className="px-3 py-2 text-gray-500">{col.description || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
