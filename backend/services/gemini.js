@@ -232,7 +232,7 @@ function buildInboundQuery({ days, company, limit, flowName }) {
     : '';
   return `SELECT * FROM \`${INBOUND_TABLE}\`
 WHERE DATE(created_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
-AND direction = 'inbound'
+AND direction = 'Inbound'
 ${companyFilter}
 ${flowFilter}
 LIMIT ${limit}`;

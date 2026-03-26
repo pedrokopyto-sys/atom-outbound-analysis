@@ -71,7 +71,7 @@ router.get('/flows', async (req, res) => {
       SELECT flow_name, COUNT(DISTINCT lead_id) AS total
       FROM \`${table.fullName}\`
       WHERE DATE(${table.dateColumn}) >= DATE_SUB(CURRENT_DATE(), INTERVAL ${parseInt(days)} DAY)
-        AND direction = 'inbound'
+        AND direction = 'Inbound'
         AND flow_name IS NOT NULL
         AND TRIM(flow_name) != ''`;
     if (company && company.trim()) {
