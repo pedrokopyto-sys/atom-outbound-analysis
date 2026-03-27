@@ -238,6 +238,11 @@ REGLAS PARA followups:
 - Son preguntas sobre datos aún no vistos (no repitas lo que ya se analizó).
 - NUNCA sugerir comparar con otras empresas.
 
+REGLAS CRÍTICAS de formato JSON:
+- Dentro de los valores string, escapá siempre las comillas dobles como \" y nunca las dejes sin escapar.
+- Los saltos de línea dentro de strings deben ser \n (nunca un salto de línea literal).
+- Nunca uses barras invertidas solas (\) sin un carácter de escape válido después (", \, /, b, f, n, r, t, u).
+
 PREGUNTA ORIGINAL: ${question}`;
 
   const result = await model.generateContent(prompt);
@@ -388,6 +393,11 @@ Respondé ÚNICAMENTE con un JSON válido, sin markdown exterior:
     "pregunta 2 sobre las conversaciones"
   ]
 }
+
+REGLAS CRÍTICAS de formato JSON:
+- Dentro de los valores string, escapá siempre las comillas dobles como \" y nunca las dejes sin escapar.
+- Los saltos de línea dentro de strings deben ser \n (nunca un salto de línea literal).
+- Nunca uses barras invertidas solas (\) sin un carácter de escape válido después (", \, /, b, f, n, r, t, u).
 
 REGLAS de formato para el campo "respuesta":
 - Cuando uses listas o bullets, usá siempre "-" (guión) como marcador de lista Markdown, nunca "•" ni "*".
