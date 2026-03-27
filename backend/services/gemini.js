@@ -5,11 +5,12 @@ const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 function parseJSON(text) {
   const cleaned = text.trim().replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
+
+  // Intento 1: parse directo
+  try { return JSON.parse(cleaned); } catch {}
+
+  // Intento 2: sanitizar caracteres de control dentro de strings
   try {
-    return JSON.parse(cleaned);
-  } catch {
-    // Gemini sometimes includes literal control characters inside JSON string values
-    // (e.g. real newlines in conversation quotes). Sanitize only within strings.
     const sanitized = cleaned.replace(
       /"((?:[^"\\]|\\.)*)"/gs,
       (_, content) => '"' + content
@@ -19,7 +20,36 @@ function parseJSON(text) {
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
     );
     return JSON.parse(sanitized);
+  } catch {}
+
+  // Intento 3: eliminar secuencias de escape inválidas (ej: \q, \', \-)
+  // JSON solo acepta: \" \\ \/ \b \f \n \r \t \uXXXX
+  try {
+    const fixedEscapes = cleaned.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
+    return JSON.parse(fixedEscapes);
+  } catch {}
+
+  // Intento 4: combinación de intento 2 + 3
+  try {
+    const fixedEscapes = cleaned.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
+    const sanitized = fixedEscapes.replace(
+      /"((?:[^"\\]|\\.)*)"/gs,
+      (_, content) => '"' + content
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
+    );
+    return JSON.parse(sanitized);
+  } catch {}
+
+  // Último recurso: extraer respuesta y followups manualmente con regex
+  const respuestaMatch = cleaned.match(/"respuesta"\s*:\s*"([\s\S]*?)"\s*,\s*"followups"/);
+  if (respuestaMatch) {
+    return { respuesta: respuestaMatch[1].replace(/\\n/g, '\n'), followups: [] };
   }
+
+  throw new Error('No se pudo parsear la respuesta de Gemini');
 }
 
 async function generateSQL({ question, filters, tableDoc, schema, basePrompt, previousResult }) {
