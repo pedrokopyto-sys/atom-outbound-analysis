@@ -26,7 +26,11 @@ router.post('/', async (req, res) => {
     if (isInbound) {
       // Inbound: fixed query, no dynamic SQL generation
       sql = buildInboundQuery({ days: filters.days, company: filters.company, limit: filters.limit, flowName: filters.flowName });
-      results = await runQuery(sql);
+      const rawResults = await runQuery(sql);
+      results = rawResults.filter(r => {
+        if (!r.text) return false;
+        try { const msgs = JSON.parse(r.text); return Array.isArray(msgs) && msgs.length > 0; } catch { return false; }
+      });
       analysis = await summarizeInbound({ question, results, tableDoc, basePrompt });
     } else {
       // Outbound: dynamic SQL via Gemini

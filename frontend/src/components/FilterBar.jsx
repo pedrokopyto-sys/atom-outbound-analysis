@@ -3,7 +3,7 @@ import { getCompanies, getFlows } from '../api'
 import { AlertCircle } from 'lucide-react'
 
 const DAY_OPTIONS   = [7, 15, 30]
-const LIMIT_OPTIONS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+const LIMIT_OPTIONS = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
 
 const INBOUND_TABLE_ID = 'first_30_messages_last_30_days'
 

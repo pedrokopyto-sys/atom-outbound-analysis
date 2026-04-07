@@ -1,55 +1,16 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const jsonModel = genAI.getGenerativeModel({
+  model: 'gemini-2.0-flash',
+  generationConfig: { responseMimeType: 'application/json' }
+});
 
 function parseJSON(text) {
-  const cleaned = text.trim().replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
-
-  // Intento 1: parse directo
-  try { return JSON.parse(cleaned); } catch {}
-
-  // Intento 2: sanitizar caracteres de control dentro de strings
-  try {
-    const sanitized = cleaned.replace(
-      /"((?:[^"\\]|\\.)*)"/gs,
-      (_, content) => '"' + content
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
-    );
-    return JSON.parse(sanitized);
-  } catch {}
-
-  // Intento 3: eliminar secuencias de escape inválidas (ej: \q, \', \-)
-  // JSON solo acepta: \" \\ \/ \b \f \n \r \t \uXXXX
-  try {
-    const fixedEscapes = cleaned.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
-    return JSON.parse(fixedEscapes);
-  } catch {}
-
-  // Intento 4: combinación de intento 2 + 3
-  try {
-    const fixedEscapes = cleaned.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
-    const sanitized = fixedEscapes.replace(
-      /"((?:[^"\\]|\\.)*)"/gs,
-      (_, content) => '"' + content
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
-    );
-    return JSON.parse(sanitized);
-  } catch {}
-
-  // Último recurso: extraer respuesta y followups manualmente con regex
-  const respuestaMatch = cleaned.match(/"respuesta"\s*:\s*"([\s\S]*?)"\s*,\s*"followups"/);
-  if (respuestaMatch) {
-    return { respuesta: respuestaMatch[1].replace(/\\n/g, '\n'), followups: [] };
+  try { return JSON.parse(text.trim()); } catch (e) {
+    console.error('[parseJSON] RAW RESPONSE:', text.slice(0, 500));
+    throw new Error('No se pudo parsear la respuesta de Gemini: ' + e.message);
   }
-
-  throw new Error('No se pudo parsear la respuesta de Gemini');
 }
 
 async function generateSQL({ question, filters, tableDoc, schema, basePrompt, previousResult }) {
@@ -122,7 +83,7 @@ NUNCA devolver campañas sin ordenar. El usuario siempre necesita ver las más i
 
 PREGUNTA DEL USUARIO: ${question}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await jsonModel.generateContent(prompt);
   return parseJSON(result.response.text());
 }
 
@@ -245,7 +206,7 @@ REGLAS CRÍTICAS de formato JSON:
 
 PREGUNTA ORIGINAL: ${question}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await jsonModel.generateContent(prompt);
   return parseJSON(result.response.text());
 }
 
@@ -291,7 +252,7 @@ function formatConversations(rows) {
       .join('\n');
 
     return `---
-CONVERSACION lead_id: ${row.lead_id}
+CONVERSACION conversation_id: ${row.conversation_id ?? 'N/A'}
 Empresa: ${row.company_name} | Asesor: ${row.user_name ?? 'N/A'} | Grupo: ${row.group_name ?? 'N/A'}
 Asignado: ${row.asigned} | Tipificación: ${row.last_typification ?? 'Sin tipificación'} | Etapa: ${row.max_lead_stage ?? 'N/A'}
 Mensajes del cliente: ${clientMessages || '(sin mensajes de texto del cliente)'}
@@ -329,6 +290,7 @@ Reglas de interpretación del campo text:
 - Leé cada conversación completa antes de sacar conclusiones. No te bases solo en metadatos si la pregunta requiere entender el contenido.
 - Separar siempre la interacción bot vs. la interacción humana dentro de cada conversación.
 - Nunca inventes datos. Si una conversación no tiene suficiente información para responder, indicalo.
+- Cuando cites ejemplos de conversaciones específicas, siempre referencialas por su **conversation_id** (no por lead_id).
 - Siempre que puedas, incluí:
   - Cantidad de conversaciones analizadas
   - Números absolutos y porcentajes
@@ -411,7 +373,7 @@ REGLAS followups:
 
 PREGUNTA ORIGINAL: ${question}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await jsonModel.generateContent(prompt);
   return parseJSON(result.response.text());
 }
 

@@ -33,7 +33,7 @@ export default function Home() {
     tableId:  localStorage.getItem('atom_table_id') || 'outbound_analysis',
     days:     parseInt(localStorage.getItem('atom_days')    || '7'),
     company:  localStorage.getItem('atom_company') || '',
-    limit:    parseInt(localStorage.getItem('atom_limit')   || '100'),
+    limit:    parseInt(localStorage.getItem('atom_limit')   || '200'),
     flowName: null
   })
   const [flows, setFlows] = useState([])

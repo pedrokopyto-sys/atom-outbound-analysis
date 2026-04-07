@@ -117,7 +117,7 @@ export default function Settings() {
   const [testTableId, setTestTableId] = useState('')
   const [testDays, setTestDays] = useState(parseInt(localStorage.getItem('atom_days') || '7'))
   const [testCompany, setTestCompany] = useState(localStorage.getItem('atom_company') || '')
-  const [testLimit, setTestLimit] = useState(parseInt(localStorage.getItem('atom_limit') || '100'))
+  const [testLimit, setTestLimit] = useState(parseInt(localStorage.getItem('atom_limit') || '200'))
   const [testResult, setTestResult] = useState(null)
   const [testLoading, setTestLoading] = useState(false)
   const [companies, setCompanies] = useState([])
@@ -349,7 +349,7 @@ export default function Settings() {
               <div className="col-span-2">
                 <label className={labelCls}>Límite de registros</label>
                 <select value={testLimit} onChange={e => setTestLimit(parseInt(e.target.value))} className={selectCls}>
-                  {[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(l => (
+                  {[20, 40, 60, 80, 100, 120, 140, 160, 180, 200].map(l => (
                     <option key={l} value={l}>{l} registros</option>
                   ))}
                 </select>
