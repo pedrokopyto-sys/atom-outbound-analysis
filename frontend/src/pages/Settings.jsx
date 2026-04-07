@@ -423,6 +423,17 @@ export default function Settings() {
               </div>
             )}
           </div>
+
+          {/* Analytics download button */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowAnalyticsModal(true)}
+              className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-accent hover:bg-accent-dark px-4 py-3 rounded-xl transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar historial de consultas
+            </button>
+          </div>
         </div>
       </div>
 
@@ -438,17 +449,6 @@ export default function Settings() {
           placeholder="Ej: Siempre mencionar el nombre del asesor asignado cuando esté disponible..."
         />
       )}
-
-      {/* Analytics download button */}
-      <div className="max-w-5xl mx-auto px-6 pb-8">
-        <button
-          onClick={() => setShowAnalyticsModal(true)}
-          className="flex items-center gap-2 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:border-accent hover:text-accent px-4 py-2 rounded-xl transition-colors"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Descargar historial de consultas
-        </button>
-      </div>
 
       {/* Analytics modal */}
       {showAnalyticsModal && (
