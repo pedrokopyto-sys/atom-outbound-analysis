@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { generateSQL, summarizeResults, buildInboundQuery, summarizeInbound } = require('../services/gemini');
 const { runQuery, getTableSchema }      = require('../services/bigquery');
-const { getConfig, saveHistory }        = require('../services/db');
+const { getConfig, saveHistory, saveAnalytics } = require('../services/db');
 
 router.post('/', async (req, res) => {
   try {
-    const { question, filters, previousResult = [], tableDoc: bodyTableDoc, basePrompt: bodyBasePrompt } = req.body;
+    const { question, filters, previousResult = [], tableDoc: bodyTableDoc, basePrompt: bodyBasePrompt, source } = req.body;
 
     if (!question || !filters) {
       return res.status(400).json({ error: 'question y filters son requeridos' });
@@ -48,6 +48,17 @@ router.post('/', async (req, res) => {
       }
       analysis = await summarizeResults({ question, results, tableDoc, schema, basePrompt });
     }
+
+    saveAnalytics({
+      question,
+      source: source || 'typed',
+      table:     filters.table    || '',
+      company:   filters.company  || '',
+      days:      filters.days     || null,
+      limit:     filters.limit    || null,
+      flow_name: filters.flowName || '',
+      device:    req.headers['user-agent'] || ''
+    });
 
     saveHistory({
       question, action, sql_query: sql, raw_results: results,

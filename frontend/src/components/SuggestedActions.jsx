@@ -20,7 +20,7 @@ export default function SuggestedActions({ onSelect, tableId }) {
       {suggestions.map(({ emoji, label }, i) => (
         <button
           key={i}
-          onClick={() => onSelect(label)}
+          onClick={() => onSelect(label, 'initial_suggestion')}
           className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 hover:bg-accent text-white text-xs font-medium transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
         >
           <span>{emoji}</span>

@@ -58,7 +58,7 @@ export default function ResponseCard({ data, onRegenerate, onFollowUp }) {
           {followups.map((q, i) => (
             <button
               key={i}
-              onClick={() => onFollowUp(q)}
+              onClick={() => onFollowUp(q, 'followup_suggestion')}
               className="flex items-center gap-3 text-left px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-accent hover:border-accent text-sm text-gray-700 hover:text-white transition-all group shadow-sm font-medium"
             >
               <ChevronRight size={14} className="shrink-0 text-gray-300 group-hover:text-white transition-colors" />

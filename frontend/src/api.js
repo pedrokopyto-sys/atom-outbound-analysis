@@ -12,3 +12,9 @@ export const getTableDescription = (tableId) => api.get(`/bq/description?tableId
 export const sendChat      = (data)         => api.post('/chat', data).then(r => r.data)
 export const getHistory    = ()             => api.get('/history').then(r => r.data)
 export const clearHistory  = ()             => api.delete('/history/clear').then(r => r.data)
+export const downloadAnalytics = (from, to) => {
+  const params = new URLSearchParams()
+  if (from) params.set('from', from)
+  if (to)   params.set('to',   to)
+  window.location.href = `/api/analytics/download?${params.toString()}`
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Save, Play, CheckCircle, XCircle, Pencil, X, Settings2, Plug, ChevronDown, ChevronUp, Lock } from 'lucide-react'
-import { loadConfig, saveConfig, testBQ, getCompanies, clearSchemaCache, getTableDescription } from '../api'
+import { loadConfig, saveConfig, testBQ, getCompanies, clearSchemaCache, getTableDescription, downloadAnalytics } from '../api'
 
 const SYSTEM_PROMPT = `IDENTIDAD: Analista de marketing + especialista en copywriting para campañas de WhatsApp.
 
@@ -124,6 +124,9 @@ export default function Settings() {
   const [loadingCo, setLoadingCo] = useState(false)
   const [schemaCleared, setSchemaCleared] = useState(false)
   const [filtersSaved, setFiltersSaved] = useState(false)
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
+  const [analyticsFrom, setAnalyticsFrom] = useState('')
+  const [analyticsTo, setAnalyticsTo] = useState('')
 
   const selectCls = "w-full bg-orange-50 border border-orange-100 text-sm text-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-accent/50 cursor-pointer"
   const labelCls = "block text-xs font-bold text-accent mb-1.5"
@@ -434,6 +437,47 @@ export default function Settings() {
           saving={saved}
           placeholder="Ej: Siempre mencionar el nombre del asesor asignado cuando esté disponible..."
         />
+      )}
+
+      {/* Analytics download button */}
+      <div className="max-w-5xl mx-auto px-6 pb-8">
+        <button
+          onClick={() => setShowAnalyticsModal(true)}
+          className="flex items-center gap-2 text-xs font-semibold text-gray-500 border border-gray-200 bg-white hover:border-accent hover:text-accent px-4 py-2 rounded-xl transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar historial de consultas
+        </button>
+      </div>
+
+      {/* Analytics modal */}
+      {showAnalyticsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowAnalyticsModal(false)}>
+          <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-sm p-6 shadow-xl space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-800">Descargar historial de consultas</h3>
+              <button onClick={() => setShowAnalyticsModal(false)} className="text-gray-400 hover:text-gray-700 transition-colors text-xs">✕</button>
+            </div>
+            <p className="text-xs text-gray-500">Seleccioná el rango de fechas. Si lo dejás vacío, descarga todo el historial.</p>
+            <div className="space-y-3">
+              <div>
+                <label className={labelCls}>Desde</label>
+                <input type="date" value={analyticsFrom} onChange={e => setAnalyticsFrom(e.target.value)} className={selectCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Hasta</label>
+                <input type="date" value={analyticsTo} onChange={e => setAnalyticsTo(e.target.value)} className={selectCls} />
+              </div>
+            </div>
+            <button
+              onClick={() => { downloadAnalytics(analyticsFrom, analyticsTo); setShowAnalyticsModal(false) }}
+              className="w-full bg-accent hover:bg-accent-dark text-white text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar CSV
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

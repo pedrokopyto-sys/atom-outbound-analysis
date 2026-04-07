@@ -7,7 +7,7 @@ import SuggestedActions from '../components/SuggestedActions'
 import ResponseCard from '../components/ResponseCard'
 import LoadingCard from '../components/LoadingCard'
 import FieldsModal from '../components/FieldsModal'
-import { loadConfig, sendChat, getHistory, clearHistory, getFlows, getTableDescription } from '../api'
+import { loadConfig, sendChat, getHistory, clearHistory, getFlows, getTableDescription, downloadAnalytics } from '../api'
 
 const PHRASES = [
   { emoji: '📊', text: 'Entendé tus campañas.' },
@@ -94,7 +94,7 @@ export default function Home() {
     basePrompt: localStorage.getItem(`atom_base_prompt_${filters.tableId}`) || ''
   })
 
-  const handleSend = async (question) => {
+  const handleSend = async (question, source = 'typed') => {
     if (!question.trim() || loading || !filters.company) return
     setMessages(prev => [
       ...prev,
@@ -105,6 +105,7 @@ export default function Home() {
     try {
       const result = await sendChat({
         question,
+        source,
         filters: { table: getActiveTableName(), days: filters.days, company: filters.company, limit: filters.limit, flowName: filters.flowName },
         previousResult: getLastResult(),
         ...getClientConfig()

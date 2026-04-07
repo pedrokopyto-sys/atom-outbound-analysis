@@ -2,13 +2,15 @@ const fs   = require('fs');
 const path = require('path');
 
 const IS_VERCEL = !!process.env.VERCEL;
-const DATA_DIR   = path.join(__dirname, '../data');
-const CONFIG_FILE  = path.join(DATA_DIR, 'config.json');
-const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
+const DATA_DIR        = path.join(__dirname, '../data');
+const CONFIG_FILE     = path.join(DATA_DIR, 'config.json');
+const HISTORY_FILE    = path.join(DATA_DIR, 'history.json');
+const ANALYTICS_FILE  = path.join(DATA_DIR, 'analytics.json');
 
 // In-memory fallback for Vercel (stateless — resets on each cold start)
-let memConfig  = {};
-let memHistory = [];
+let memConfig    = {};
+let memHistory   = [];
+let memAnalytics = [];
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -29,8 +31,9 @@ async function initDB() {
     return;
   }
   ensureDataDir();
-  if (!fs.existsSync(CONFIG_FILE))  writeJSON(CONFIG_FILE,  {});
-  if (!fs.existsSync(HISTORY_FILE)) writeJSON(HISTORY_FILE, []);
+  if (!fs.existsSync(CONFIG_FILE))    writeJSON(CONFIG_FILE,    {});
+  if (!fs.existsSync(HISTORY_FILE))  writeJSON(HISTORY_FILE,  []);
+  if (!fs.existsSync(ANALYTICS_FILE)) writeJSON(ANALYTICS_FILE, []);
   console.log('✅ File-based storage initialized at', DATA_DIR);
 }
 
@@ -82,4 +85,38 @@ function clearHistory() {
   writeJSON(HISTORY_FILE, []);
 }
 
-module.exports = { initDB, getConfig, setConfig, getHistory, saveHistory, clearHistory };
+function saveAnalytics(entry) {
+  const record = {
+    timestamp:  new Date().toISOString(),
+    question:   entry.question   ?? '',
+    source:     entry.source     ?? 'typed',
+    table:      entry.table      ?? '',
+    company:    entry.company    ?? '',
+    days:       entry.days       ?? null,
+    limit:      entry.limit      ?? null,
+    flow_name:  entry.flow_name  ?? '',
+    device:     entry.device     ?? ''
+  };
+  if (IS_VERCEL) {
+    memAnalytics.push(record);
+    if (memAnalytics.length > 5000) memAnalytics.splice(0, memAnalytics.length - 5000);
+    return;
+  }
+  ensureDataDir();
+  const analytics = readJSON(ANALYTICS_FILE, []);
+  analytics.push(record);
+  if (analytics.length > 5000) analytics.splice(0, analytics.length - 5000);
+  writeJSON(ANALYTICS_FILE, analytics);
+}
+
+function getAnalytics(from, to) {
+  const records = IS_VERCEL ? memAnalytics : readJSON(ANALYTICS_FILE, []);
+  return records.filter(r => {
+    const d = r.timestamp.slice(0, 10);
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+}
+
+module.exports = { initDB, getConfig, setConfig, getHistory, saveHistory, clearHistory, saveAnalytics, getAnalytics };
