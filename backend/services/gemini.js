@@ -327,6 +327,7 @@ Reglas de interpretación del campo text:
 - Agrupar en máximo 6 categorías temáticas representativas.
 - Para cada categoría indicar: nombre de la categoría, cantidad de conversaciones, porcentaje sobre el total analizado, y un ejemplo textual representativo.
 - Las categorías deben ser mutuamente excluyentes y cubrir el 100% de las conversaciones analizadas.
+- Cuando la respuesta sea un listado de categorías con porcentajes, ordenalas siempre de mayor a menor porcentaje.
 
 ---
 
