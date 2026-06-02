@@ -2,13 +2,42 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const jsonModel = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash',
+  model: 'gemini-2.5-flash',
   generationConfig: { responseMimeType: 'application/json' }
 });
 
 function parseJSON(text) {
-  try { return JSON.parse(text.trim()); } catch (e) {
-    console.error('[parseJSON] RAW RESPONSE:', text.slice(0, 500));
+  const t = text.trim();
+
+  // Intento 1: parse directo (JSON mode debería cubrir esto casi siempre)
+  try { return JSON.parse(t); } catch {}
+
+  // Intento 2: sanitizar caracteres de control dentro de strings (saltos de línea literales, tabs, etc.)
+  try {
+    const sanitized = t.replace(/"((?:[^"\\]|\\.)*)"/gs, (_, content) =>
+      '"' + content
+        .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
+    );
+    return JSON.parse(sanitized);
+  } catch {}
+
+  // Intento 3: eliminar secuencias de escape inválidas (\q, \', \-, etc.)
+  try {
+    const fixed = t.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
+    return JSON.parse(fixed);
+  } catch {}
+
+  // Intento 4: combinación de 2 + 3
+  try {
+    const fixed = t.replace(/\\([^"\\/bfnrtu\n])/g, '$1');
+    const sanitized = fixed.replace(/"((?:[^"\\]|\\.)*)"/gs, (_, content) =>
+      '"' + content
+        .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') + '"'
+    );
+    return JSON.parse(sanitized);
+  } catch (e) {
     throw new Error('No se pudo parsear la respuesta de Gemini: ' + e.message);
   }
 }
